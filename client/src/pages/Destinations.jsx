@@ -8,16 +8,26 @@ const Destinations = () => {
   const [destinations, setDestinations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [wishlistIds, setWishlistIds] = useState(new Set());
 
   useEffect(() => {
-    const fetchDestinations = async () => {
+    const fetchData = async () => {
       try {
         const params = search ? `?search=${search}` : '';
-        const res = await api.get(`/destinations${params}`);
-        setDestinations(res.data.data || []);
+        const [destRes, wishRes] = await Promise.allSettled([
+          api.get(`/destinations${params}`),
+          api.get('/destinations/wishlist/me'),
+        ]);
+        if (destRes.status === 'fulfilled') {
+          setDestinations(destRes.value.data.data || []);
+        }
+        if (wishRes.status === 'fulfilled') {
+          const items = wishRes.value.data.data?.destinations || [];
+          setWishlistIds(new Set(items.map((d) => d.destination?._id).filter(Boolean)));
+        }
       } catch (err) {} finally { setLoading(false); }
     };
-    fetchDestinations();
+    fetchData();
   }, [search]);
 
   return (
@@ -57,6 +67,7 @@ const Destinations = () => {
                       <p className="text-sm text-dark-500 dark:text-dark-400">{dest.country}</p>
                     </div>
                     {dest.isPopular && <span className="badge-primary text-xs">Popular</span>}
+                    {wishlistIds.has(dest._id) && <span className="flex items-center gap-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full"><FiHeart className="w-3 h-3" /> Wishlist</span>}
                   </div>
                   <p className="text-sm text-dark-500 dark:text-dark-400 mt-3 line-clamp-2">{dest.description}</p>
                   <div className="flex items-center justify-between mt-4 text-sm">

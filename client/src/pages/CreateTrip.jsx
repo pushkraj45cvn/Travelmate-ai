@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { FiArrowLeft, FiUpload } from 'react-icons/fi';
@@ -10,14 +10,16 @@ import { toast } from 'react-toastify';
 const CreateTrip = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
   const { isLoading } = useSelector((state) => state.trips);
+  const destData = location.state?.fromDestination || {};
   const [formData, setFormData] = useState({
-    title: '',
-    destination: '',
-    country: '',
-    description: '',
-    budget: '',
-    currency: 'USD',
+    title: destData.title || '',
+    destination: destData.destination || '',
+    country: destData.country || '',
+    description: destData.description || '',
+    budget: destData.budget !== undefined ? destData.budget : '',
+    currency: destData.currency || 'USD',
     travelType: 'solo',
     startDate: '',
     endDate: '',
@@ -35,10 +37,28 @@ const CreateTrip = () => {
       toast.error('End date must be after start date');
       return;
     }
-    const result = await dispatch(createTrip(formData));
+
+    const payload = {
+      ...formData,
+      budget: formData.budget !== '' ? Number(formData.budget) : undefined,
+      numberOfTravelers: Number(formData.numberOfTravelers),
+    };
+
+    const result = await dispatch(createTrip(payload));
     if (result.meta.requestStatus === 'fulfilled') {
-      toast.success('Trip created successfully!');
-      navigate(`/trips/${result.payload._id}`);
+      toast.success('New trip added!');
+      setFormData({
+        title: '',
+        destination: '',
+        country: '',
+        description: '',
+        budget: '',
+        currency: 'USD',
+        travelType: 'solo',
+        startDate: '',
+        endDate: '',
+        numberOfTravelers: 1,
+      });
     }
   };
 

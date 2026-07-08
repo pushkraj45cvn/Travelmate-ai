@@ -1,24 +1,35 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
-import { FiEye, FiEyeOff, FiMail, FiLock } from 'react-icons/fi';
+import { FiEye, FiEyeOff, FiMail, FiLock, FiShield } from 'react-icons/fi';
 import { login } from '../redux/slices/authSlice';
 
 const Login = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { isLoading } = useSelector((state) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm();
 
   const onSubmit = async (data) => {
-    dispatch(login(data));
+    const result = await dispatch(login(data));
+    if (result?.meta?.requestStatus === 'fulfilled') {
+      const user = result.payload?.user;
+      if (user?.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
+    }
   };
 
-  const handleGoogleLogin = () => {
-    // In production, redirect to Google OAuth
-    dispatch(login({ email: 'demo@travelmate.com', password: 'Demo1234' }));
+  const handleGoogleLogin = async () => {
+    const result = await dispatch(login({ email: 'demo@travelmate.com', password: 'Demo1234' }));
+    if (result?.meta?.requestStatus === 'fulfilled') {
+      navigate('/dashboard');
+    }
   };
 
   return (
@@ -108,6 +119,16 @@ const Login = () => {
             Sign up free
           </Link>
         </p>
+
+        <div className="mt-6 pt-4 border-t border-gray-100 dark:border-dark-700">
+          <Link
+            to="/admin-login"
+            className="flex items-center justify-center gap-2 text-xs text-gray-400 hover:text-amber-500 transition-colors"
+          >
+            <FiShield className="w-3 h-3" />
+            Admin Portal
+          </Link>
+        </div>
       </motion.div>
     </div>
   );

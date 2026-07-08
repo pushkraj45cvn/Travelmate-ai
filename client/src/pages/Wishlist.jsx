@@ -15,7 +15,7 @@ const Wishlist = () => {
   const fetchWishlist = async () => {
     try {
       const res = await api.get('/destinations/wishlist/me');
-      setWishlist(res.data);
+      setWishlist(res.data.data || { destinations: [] });
     } catch (err) {} finally { setLoading(false); }
   };
 

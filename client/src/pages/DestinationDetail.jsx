@@ -1,30 +1,50 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiArrowLeft, FiHeart, FiMapPin, FiStar } from 'react-icons/fi';
+import { FiArrowLeft, FiHeart, FiMapPin, FiStar, FiPlusCircle } from 'react-icons/fi';
 import api from '../services/api';
 import { toast } from 'react-toastify';
 
 const DestinationDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [destination, setDestination] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [inWishlist, setInWishlist] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
       try {
-        const res = await api.get(`/destinations/${id}`);
-        setDestination(res.data.data);
+        const [destRes, wishRes] = await Promise.allSettled([
+          api.get(`/destinations/${id}`),
+          api.get('/destinations/wishlist/me'),
+        ]);
+        if (destRes.status === 'fulfilled') {
+          setDestination(destRes.value.data.data);
+        }
+        if (wishRes.status === 'fulfilled') {
+          const items = wishRes.value.data.data?.destinations || [];
+          setInWishlist(items.some((d) => d.destination?._id === id));
+        }
       } catch (err) {} finally { setLoading(false); }
     };
     fetch();
   }, [id]);
 
-  const addToWishlist = async () => {
+  const toggleWishlist = async () => {
     try {
-      await api.post('/destinations/wishlist', { destinationId: id });
-      toast.success('Added to wishlist!');
-    } catch (err) { toast.error(err.response?.data?.error || 'Already in wishlist'); }
+      if (inWishlist) {
+        await api.delete(`/destinations/wishlist/${id}`);
+        setInWishlist(false);
+        toast.success('Removed from wishlist');
+      } else {
+        await api.post('/destinations/wishlist', { destinationId: id });
+        setInWishlist(true);
+        toast.success('Added to wishlist!');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Something went wrong');
+    }
   };
 
   if (loading || !destination) {
@@ -48,8 +68,8 @@ const DestinationDetail = () => {
                 <h1 className="text-4xl font-bold text-white">{destination.name}</h1>
                 <p className="text-white/80 flex items-center gap-2"><FiMapPin className="w-4 h-4" /> {destination.country}</p>
               </div>
-              <button onClick={addToWishlist} className="p-3 bg-white/20 hover:bg-white/30 rounded-xl text-white transition-colors">
-                <FiHeart className="w-6 h-6" />
+              <button onClick={toggleWishlist} className={`p-3 rounded-xl transition-colors ${inWishlist ? 'bg-red-500 text-white' : 'bg-white/20 hover:bg-white/30 text-white'}`}>
+                <FiHeart className={`w-6 h-6 ${inWishlist ? 'fill-current' : ''}`} />
               </button>
             </div>
           </div>
@@ -106,11 +126,30 @@ const DestinationDetail = () => {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between"><span className="text-dark-500">Best Time</span><span className="font-medium">{destination.bestTimeToVisit}</span></div>
                 <div className="flex justify-between"><span className="text-dark-500">Currency</span><span className="font-medium">{destination.currency}</span></div>
-                <div className="flex justify-between"><span className="text-dark-500">Language</span><span className="font-medium">{destination.language}</span></div>
+                <div className="flex justify-between"><span className="text-dark-500">Language</span><span className="font-medium">{destination.spokenLanguage}</span></div>
                 <div className="flex justify-between"><span className="text-dark-500">Timezone</span><span className="font-medium">{destination.timezone}</span></div>
                 <div className="flex justify-between"><span className="text-dark-500">Budget</span><span className="font-medium">${destination.estimatedBudget?.min} - ${destination.estimatedBudget?.max}</span></div>
               </div>
-              <button onClick={addToWishlist} className="btn-outline w-full mt-4 text-sm">Add to Wishlist</button>
+              <button onClick={toggleWishlist} className={`w-full mt-4 text-sm ${inWishlist ? 'btn-danger' : 'btn-outline'}`}>
+                {inWishlist ? '❤️ Remove from Wishlist' : 'Add to Wishlist'}
+              </button>
+              <button
+                onClick={() => navigate('/trips/new', {
+                  state: {
+                    fromDestination: {
+                      title: `Trip to ${destination.name}`,
+                      destination: destination.name,
+                      country: destination.country,
+                      description: destination.description,
+                      budget: destination.estimatedBudget?.min || '',
+                      currency: destination.currency || 'USD',
+                    },
+                  },
+                })}
+                className="btn-primary w-full mt-2 text-sm"
+              >
+                <FiPlusCircle className="w-4 h-4 inline mr-1" /> Plan a Trip
+              </button>
             </div>
 
             {/* Travel Tips */}

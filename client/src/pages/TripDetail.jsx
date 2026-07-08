@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiEdit2, FiTrash2, FiCalendar, FiMapPin, FiUsers, FiDollarSign, FiArrowLeft, FiMoreVertical } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiCalendar, FiMapPin, FiUsers, FiDollarSign, FiArrowLeft, FiMoreVertical, FiSend, FiCheckSquare, FiPlus } from 'react-icons/fi';
 import { useSelector, useDispatch } from 'react-redux';
 import { getTrip, deleteTrip } from '../redux/slices/tripSlice';
 import { formatDate, getDaysBetween, getTripStatusColor, getTravelTypeColor, formatCurrency } from '../utils/formatters';
@@ -10,8 +10,12 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { toast } from 'react-toastify';
 import expenseService from '../services/expenseService';
 import packingService from '../services/packingService';
+import api from '../services/api';
+import Card from '../components/common/Card';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
+
+const STATUSES = ['planning', 'ongoing', 'completed', 'cancelled'];
 
 const TripDetail = () => {
   const { id } = useParams();
@@ -21,6 +25,11 @@ const TripDetail = () => {
   const { user } = useSelector((state) => state.auth);
   const [expenseSummary, setExpenseSummary] = useState(null);
   const [packingProgress, setPackingProgress] = useState(0);
+  const [packingItems, setPackingItems] = useState([]);
+  const [newItemName, setNewItemName] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('viewer');
+  const [sendingInvite, setSendingInvite] = useState(false);
 
   useEffect(() => {
     dispatch(getTrip(id));
@@ -29,7 +38,7 @@ const TripDetail = () => {
   useEffect(() => {
     if (trip) {
       fetchExpenseSummary();
-      fetchPackingProgress();
+      fetchPackingData();
     }
   }, [trip]);
 
@@ -40,13 +49,55 @@ const TripDetail = () => {
     } catch (err) {}
   };
 
-  const fetchPackingProgress = async () => {
+  const fetchPackingData = async () => {
     try {
       const list = await packingService.getPackingList(trip._id);
+      setPackingItems(list.items || []);
       const total = list.items?.length || 0;
       const checked = list.items?.filter(i => i.isChecked).length || 0;
       setPackingProgress(total > 0 ? Math.round((checked / total) * 100) : 0);
     } catch (err) {}
+  };
+
+  const handleStatusChange = async (newStatus) => {
+    try {
+      await api.put(`/trips/${id}/status`, { status: newStatus });
+      dispatch(getTrip(id));
+      toast.success(`Status changed to ${newStatus}`);
+    } catch (err) {
+      toast.error('Failed to update status');
+    }
+  };
+
+  const handleToggleItem = async (itemId) => {
+    try {
+      await packingService.toggleItem(trip._id, itemId);
+      fetchPackingData();
+    } catch (err) {
+      toast.error('Failed to update item');
+    }
+  };
+
+  const handleAddItem = async (e) => {
+    e.preventDefault();
+    if (!newItemName.trim()) return;
+    try {
+      await packingService.addItem(trip._id, { name: newItemName });
+      setNewItemName('');
+      fetchPackingData();
+      toast.success('Item added');
+    } catch (err) {
+      toast.error('Failed to add item');
+    }
+  };
+
+  const handleDeletePackingItem = async (itemId) => {
+    try {
+      await packingService.deleteItem(trip._id, itemId);
+      fetchPackingData();
+    } catch (err) {
+      toast.error('Failed to delete item');
+    }
   };
 
   const handleDelete = async () => {
@@ -54,6 +105,22 @@ const TripDetail = () => {
       await dispatch(deleteTrip(id));
       toast.success('Trip deleted');
       navigate('/trips');
+    }
+  };
+
+  const sendInvitation = async (e) => {
+    e.preventDefault();
+    if (!inviteEmail.trim()) return;
+    setSendingInvite(true);
+    try {
+      const { default: api } = await import('../services/api');
+      await api.post(`/trips/${id}/invitations`, { email: inviteEmail, role: inviteRole });
+      toast.success(`Invitation sent to ${inviteEmail}`);
+      setInviteEmail('');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to send invitation');
+    } finally {
+      setSendingInvite(false);
     }
   };
 
@@ -96,7 +163,19 @@ const TripDetail = () => {
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <span className={getTripStatusColor(trip.status)}>{trip.status}</span>
+                {isOwner ? (
+                  <select
+                    value={trip.status}
+                    onChange={(e) => handleStatusChange(e.target.value)}
+                    className="text-xs px-2 py-1 rounded-full bg-white/20 text-white border-0 cursor-pointer appearance-none outline-none font-medium"
+                  >
+                    {STATUSES.map((s) => (
+                      <option key={s} value={s} className="text-dark-800 bg-white">{s}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className={getTripStatusColor(trip.status)}>{trip.status}</span>
+                )}
                 <span className={`text-xs px-2 py-0.5 rounded-full text-white bg-white/20`}>{trip.travelType}</span>
               </div>
               <h1 className="text-3xl font-bold text-white">{trip.title}</h1>
@@ -204,10 +283,73 @@ const TripDetail = () => {
         </Card>
       </div>
 
+      {/* Packing Checklist */}
+      <Card className="mt-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2"><FiCheckSquare className="w-5 h-5" /> Packing Checklist</h2>
+          <Link to={`/trips/${id}/packing`} className="text-sm text-primary-500 hover:text-primary-600">Manage All</Link>
+        </div>
+
+        {packingProgress > 0 && (
+          <div className="mb-4">
+            <div className="flex justify-between text-sm mb-1">
+              <span className="text-dark-500">Progress</span>
+              <span className="font-medium">{packingProgress}%</span>
+            </div>
+            <div className="h-2 rounded-full bg-gray-200 dark:bg-dark-700 overflow-hidden">
+              <div className="h-full rounded-full bg-primary-500 transition-all" style={{ width: `${packingProgress}%` }} />
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-1 max-h-64 overflow-y-auto mb-3">
+          {packingItems.length === 0 ? (
+            <p className="text-sm text-dark-400 text-center py-4">No packing items yet. Add one below.</p>
+          ) : (
+            packingItems.slice(0, 10).map((item) => (
+              <div key={item._id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-700 group">
+                <label className="flex items-center gap-3 flex-1 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={item.isChecked || false}
+                    onChange={() => handleToggleItem(item._id)}
+                    className="w-4 h-4 rounded border-gray-300 dark:border-dark-600 text-primary-500 focus:ring-primary-500"
+                  />
+                  <span className={`text-sm ${item.isChecked ? 'line-through text-dark-400' : ''}`}>{item.name}</span>
+                </label>
+                <button onClick={() => handleDeletePackingItem(item._id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 text-xs p-1 transition-opacity">✕</button>
+              </div>
+            ))
+          )}
+          {packingItems.length > 10 && (
+            <p className="text-xs text-center text-dark-400 pt-1">+{packingItems.length - 10} more items</p>
+          )}
+        </div>
+
+        <form onSubmit={handleAddItem} className="flex gap-2">
+          <input
+            type="text"
+            value={newItemName}
+            onChange={(e) => setNewItemName(e.target.value)}
+            placeholder="Add item..."
+            className="input-field flex-1 text-sm py-2"
+          />
+          <button type="submit" className="btn-primary text-sm px-4 py-2 flex items-center gap-1">
+            <FiPlus className="w-4 h-4" /> Add
+          </button>
+        </form>
+      </Card>
+
       {/* Collaborators */}
       <Card className="mt-6">
-        <h2 className="text-lg font-semibold mb-4">Collaborators</h2>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">Collaborators</h2>
+          {isOwner && (
+            <span className="text-xs text-dark-400">You are the owner</span>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4 mb-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white text-xs font-semibold">
               {trip.owner?.name?.charAt(0) || 'O'}
@@ -225,6 +367,41 @@ const TripDetail = () => {
             </div>
           ))}
         </div>
+
+        {isOwner && (
+          <form onSubmit={sendInvitation} className="flex items-end gap-3 pt-3 border-t border-gray-200 dark:border-dark-700">
+            <div className="flex-1">
+              <label className="block text-xs font-medium mb-1 text-dark-500">Invite by email</label>
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="friend@example.com"
+                className="input-field text-sm"
+                required
+              />
+            </div>
+            <div className="w-28">
+              <label className="block text-xs font-medium mb-1 text-dark-500">Role</label>
+              <select
+                value={inviteRole}
+                onChange={(e) => setInviteRole(e.target.value)}
+                className="input-field text-sm"
+              >
+                <option value="viewer">Viewer</option>
+                <option value="editor">Editor</option>
+              </select>
+            </div>
+            <button
+              type="submit"
+              disabled={sendingInvite}
+              className="btn-primary text-sm flex items-center gap-2 !py-[10px]"
+            >
+              <FiSend className="w-4 h-4" />
+              {sendingInvite ? 'Sending...' : 'Invite'}
+            </button>
+          </form>
+        )}
       </Card>
     </div>
   );

@@ -1,6 +1,8 @@
+const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const ErrorResponse = require('../utils/errorResponse');
+const { findDevelopmentUserById } = require('../utils/devAuthStore');
 
 // Protect routes
 exports.protect = async (req, res, next) => {
@@ -19,6 +21,17 @@ exports.protect = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // If MongoDB is not connected, use the in-memory dev store
+    if (mongoose.connection.readyState !== 1) {
+      const devUser = await findDevelopmentUserById(decoded.id);
+      if (devUser) {
+        req.user = devUser;
+        return next();
+      }
+      return next(new ErrorResponse('Not authorized to access this route', 401));
+    }
+
     req.user = await User.findById(decoded.id);
 
     if (!req.user) {

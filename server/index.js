@@ -1,5 +1,6 @@
 const express = require('express');
 const http = require('http');
+const path = require('path');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -14,6 +15,7 @@ dotenv.config();
 // Connect to database
 const connectDB = require('./config/db');
 const { configureCloudinary } = require('./config/cloudinary');
+const { seedDevUsers } = require('./utils/seedDevUsers');
 const swaggerSpec = require('./config/swagger');
 const errorHandler = require('./middlewares/error');
 
@@ -110,15 +112,30 @@ app.use('/api/destinations', destinationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/admin', adminRoutes);
 
+// Serve frontend build for client-side routes
+const clientBuildPath = path.join(__dirname, '..', 'client', 'dist');
+if (require('fs').existsSync(clientBuildPath)) {
+  app.use(express.static(clientBuildPath));
+}
+
 // Error handler
 app.use(errorHandler);
 
 // Handle unhandled routes
 app.all('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    error: `Route ${req.originalUrl} not found`,
-  });
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({
+      success: false,
+      error: `Route ${req.originalUrl} not found`,
+    });
+  }
+
+  const indexPath = path.join(clientBuildPath, 'index.html');
+  if (require('fs').existsSync(indexPath)) {
+    return res.sendFile(indexPath);
+  }
+
+  res.status(404).send('Page not found');
 });
 
 // Configure Cloudinary
@@ -127,7 +144,8 @@ configureCloudinary();
 // Connect to database and start server
 const PORT = process.env.PORT || 5000;
 
-connectDB().then(() => {
+connectDB().then(async () => {
+  await seedDevUsers();
   server.listen(PORT, () => {
     console.log(`TravelMate AI Server running on port ${PORT}`.yellow.bold);
     console.log(`API Docs: http://localhost:${PORT}/api-docs`.blue);

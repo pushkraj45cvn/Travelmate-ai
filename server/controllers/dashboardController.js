@@ -180,6 +180,11 @@ exports.getAdminDashboard = asyncHandler(async (req, res, next) => {
 
   const usersByMonth = await User.aggregate([
     {
+      $match: {
+        createdAt: { $type: 'date' },
+      },
+    },
+    {
       $group: {
         _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
         count: { $sum: 1 },
@@ -190,10 +195,12 @@ exports.getAdminDashboard = asyncHandler(async (req, res, next) => {
   ]);
 
   const tripsByStatus = await Trip.aggregate([
+    { $match: { status: { $type: 'string' } } },
     { $group: { _id: '$status', count: { $sum: 1 } } },
   ]);
 
   const tripsByCountry = await Trip.aggregate([
+    { $match: { country: { $type: 'string' } } },
     { $group: { _id: '$country', count: { $sum: 1 } } },
     { $sort: { count: -1 } },
     { $limit: 10 },

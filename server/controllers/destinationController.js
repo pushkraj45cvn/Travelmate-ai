@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Destination = require('../models/Destination');
 const Review = require('../models/Review');
 const Wishlist = require('../models/Wishlist');
@@ -51,7 +52,7 @@ exports.getDestination = asyncHandler(async (req, res, next) => {
 
   // Get average rating
   const avgRating = await Review.aggregate([
-    { $match: { destination: require('mongoose').Types.ObjectId(req.params.id) } },
+    { $match: { destination: new mongoose.Types.ObjectId(req.params.id) } },
     { $group: { _id: null, average: { $avg: '$rating' }, count: { $sum: 1 } } },
   ]);
 

@@ -332,9 +332,9 @@ const Landing = () => {
             </div>
             <div className="grid md:grid-cols-3 gap-6 mb-12">
               {[
-                { icon: <FiMail className="w-6 h-6" />, label: 'Email', value: 'hello@travelmate-ai.com' },
-                { icon: <FiPhone className="w-6 h-6" />, label: 'Phone', value: '+1 (555) 123-4567' },
-                { icon: <FiMapPin className="w-6 h-6" />, label: 'Location', value: 'San Francisco, CA' },
+                { icon: <FiMail className="w-6 h-6" />, label: 'Email', value: 'pushkicvn2@gmail.com' },
+                { icon: <FiPhone className="w-6 h-6" />, label: 'Phone', value: '+91 9156686161' },
+                { icon: <FiMapPin className="w-6 h-6" />, label: 'Location', value: 'Pune, Maharashtra' },
               ].map((item, idx) => (
                 <div key={idx} className="card p-6 text-center">
                   <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-500 mx-auto mb-3">

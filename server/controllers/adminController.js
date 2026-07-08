@@ -91,6 +91,11 @@ exports.getAnalytics = asyncHandler(async (req, res, next) => {
   // Users registered per month (last 12 months)
   const usersByMonth = await User.aggregate([
     {
+      $match: {
+        createdAt: { $type: 'date' },
+      },
+    },
+    {
       $group: {
         _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
         count: { $sum: 1 },
@@ -102,6 +107,7 @@ exports.getAnalytics = asyncHandler(async (req, res, next) => {
 
   // Trips by country
   const tripsByCountry = await Trip.aggregate([
+    { $match: { country: { $type: 'string' } } },
     { $group: { _id: '$country', count: { $sum: 1 } } },
     { $sort: { count: -1 } },
     { $limit: 10 },
@@ -109,11 +115,13 @@ exports.getAnalytics = asyncHandler(async (req, res, next) => {
 
   // Trips by status
   const tripsByStatus = await Trip.aggregate([
+    { $match: { status: { $type: 'string' } } },
     { $group: { _id: '$status', count: { $sum: 1 } } },
   ]);
 
   // Expenses by category
   const expensesByCategory = await Expense.aggregate([
+    { $match: { category: { $type: 'string' }, amount: { $type: 'number' } } },
     { $group: { _id: '$category', total: { $sum: '$amount' }, count: { $sum: 1 } } },
     { $sort: { total: -1 } },
   ]);

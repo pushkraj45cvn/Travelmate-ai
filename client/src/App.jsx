@@ -11,6 +11,7 @@ import LoadingScreen from './components/common/LoadingScreen';
 // Lazy loaded pages
 const Landing = lazy(() => import('./pages/Landing'));
 const Login = lazy(() => import('./pages/Login'));
+const AdminLogin = lazy(() => import('./pages/AdminLogin'));
 const Register = lazy(() => import('./pages/Register'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
@@ -39,6 +40,11 @@ const AdminTrips = lazy(() => import('./pages/admin/AdminTrips'));
 const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
+const AuthRedirect = () => {
+  const { user } = useSelector((state) => state.auth);
+  return <Navigate to={user?.role === 'admin' ? '/admin' : '/dashboard'} replace />;
+};
+
 const App = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
 
@@ -51,7 +57,7 @@ const App = () => {
         {/* Auth Routes */}
         <Route
           path="/auth"
-          element={isAuthenticated ? <Navigate to="/dashboard" /> : <AuthLayout />}
+          element={isAuthenticated ? <AuthRedirect /> : <AuthLayout />}
         >
           <Route index element={<Navigate to="/auth/login" />} />
           <Route path="login" element={<Login />} />
@@ -61,6 +67,9 @@ const App = () => {
         </Route>
 
         <Route path="/verify-email/:token" element={<VerifyEmail />} />
+
+        {/* Admin Login - standalone page with different design */}
+        <Route path="/admin-login" element={<AdminLogin />} />
 
         {/* Protected Routes */}
         <Route

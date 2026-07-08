@@ -26,11 +26,11 @@ exports.createTripValidator = [
     .isISO8601()
     .withMessage('Invalid end date format'),
   body('budget')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })
     .isFloat({ min: 0 })
     .withMessage('Budget must be a positive number'),
   body('numberOfTravelers')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })
     .isInt({ min: 1 })
     .withMessage('Number of travelers must be at least 1'),
 ];
@@ -42,11 +42,11 @@ exports.updateTripValidator = [
     .isLength({ max: 100 })
     .withMessage('Title cannot exceed 100 characters'),
   body('budget')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })
     .isFloat({ min: 0 })
     .withMessage('Budget must be a positive number'),
   body('numberOfTravelers')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })
     .isInt({ min: 1 })
     .withMessage('Number of travelers must be at least 1'),
 ];

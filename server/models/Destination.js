@@ -73,7 +73,7 @@ const destinationSchema = new mongoose.Schema(
       type: String,
       default: 'USD',
     },
-    language: {
+    spokenLanguage: {
       type: String,
       default: 'English',
     },
