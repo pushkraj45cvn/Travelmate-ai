@@ -1,21 +1,56 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { motion } from 'framer-motion';
-import { FiArrowRight, FiStar, FiCheck, FiMail, FiPhone, FiMapPin } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiArrowRight, FiStar, FiCheck, FiMail, FiPhone, FiMapPin, FiChevronDown, FiMessageCircle } from 'react-icons/fi';
 import { useTheme } from '../contexts/ThemeContext';
 import { FiSun, FiMoon } from 'react-icons/fi';
+import api from '../services/api';
+import { toast } from 'react-toastify';
 
 const Landing = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const [expandedPlan, setExpandedPlan] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [contactName, setContactName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactMessage, setContactMessage] = useState('');
+  const [contactSending, setContactSending] = useState(false);
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    if (!contactName || !contactEmail || !contactMessage) return;
+    setContactSending(true);
+    try {
+      const res = await api.post('/contact', {
+        name: contactName,
+        email: contactEmail,
+        message: contactMessage,
+      });
+      toast.success(res.data.message || 'Message sent successfully!');
+      setContactName('');
+      setContactEmail('');
+      setContactMessage('');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to send message');
+    } finally {
+      setContactSending(false);
+    }
+  };
 
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard');
     }
   }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    api.get('/trips/reviews/featured')
+      .then(res => setReviews(res.data.data || []))
+      .catch(() => {});
+  }, []);
 
   const scrollTo = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -205,38 +240,47 @@ const Landing = () => {
               Loved by <span className="gradient-text">Travelers</span>
             </h2>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { name: 'Sarah Johnson', role: 'Frequent Traveler', text: 'TravelMate AI completely transformed how I plan trips. The itinerary planner is incredible!', rating: 5 },
-              { name: 'Mike Chen', role: 'Backpacker', text: 'The expense splitting feature is a lifesaver for group trips. No more awkward calculations!', rating: 5 },
-              { name: 'Emma Williams', role: 'Digital Nomad', text: 'I use it for all my travels. The packing lists and document storage are game-changers.', rating: 5 },
-            ].map((testimonial, idx) => (
-              <motion.div
-                key={testimonial.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                viewport={{ once: true }}
-                className="card p-8"
-              >
-                <div className="flex gap-1 mb-4">
-                  {Array.from({ length: testimonial.rating }, (_, i) => (
-                    <FiStar key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <p className="text-dark-600 dark:text-dark-400 mb-6 italic">"{testimonial.text}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white font-semibold">
-                    {testimonial.name.charAt(0)}
+          {reviews.length > 0 ? (
+            <div className="grid md:grid-cols-3 gap-8">
+              {reviews.slice(0, 6).map((review, idx) => (
+                <motion.div
+                  key={review._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: idx * 0.1 }}
+                  viewport={{ once: true }}
+                  className="card p-8"
+                >
+                  <div className="flex gap-1 mb-4">
+                    {Array.from({ length: review.rating }, (_, i) => (
+                      <FiStar key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                    ))}
                   </div>
-                  <div>
-                    <p className="font-semibold text-sm">{testimonial.name}</p>
-                    <p className="text-xs text-dark-500">{testimonial.role}</p>
+                  {review.title && (
+                    <p className="font-semibold text-sm mb-2 text-dark-800 dark:text-dark-200">{review.title}</p>
+                  )}
+                  <p className="text-dark-600 dark:text-dark-400 mb-6 italic">"{review.text}"</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white font-semibold text-sm">
+                      {review.avatar
+                        ? <img src={review.avatar} className="w-full h-full rounded-full object-cover" />
+                        : review.name?.charAt(0) || 'T'
+                      }
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{review.name}</p>
+                      <p className="text-xs text-dark-500">{review.role}</p>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <FiMessageCircle className="w-12 h-12 text-dark-300 mx-auto mb-4" />
+              <p className="text-dark-400">No reviews yet. Be the first to share your experience!</p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -250,41 +294,173 @@ const Landing = () => {
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {[
-              { name: 'Free', price: '$0', features: ['3 Trips', 'Basic Itinerary', 'Expense Tracking', 'Community Support'], popular: false },
-              { name: 'Pro', price: '$9', period: '/month', features: ['Unlimited Trips', 'AI Itinerary', 'Advanced Analytics', 'Priority Support', 'Group Collaboration'], popular: true },
-              { name: 'Team', price: '$19', period: '/month', features: ['Everything in Pro', 'Team Dashboard', 'Admin Controls', 'API Access', 'Custom Integrations'], popular: false },
-            ].map((plan, idx) => (
-              <motion.div
-                key={plan.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                viewport={{ once: true }}
-                className={`card p-8 ${plan.popular ? 'ring-2 ring-primary-500 relative' : ''}`}
-              >
-                {plan.popular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-primary-500 to-accent-500 text-white text-xs font-semibold rounded-full">
-                    Most Popular
-                  </span>
-                )}
-                <h3 className="text-xl font-semibold mb-2">{plan.name}</h3>
-                <div className="flex items-baseline gap-1 mb-6">
-                  <span className="text-4xl font-bold">{plan.price}</span>
-                  {plan.period && <span className="text-dark-500 dark:text-dark-400">{plan.period}</span>}
-                </div>
-                <ul className="space-y-3 mb-8">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-center gap-3 text-sm text-dark-600 dark:text-dark-400">
-                      <FiCheck className="w-4 h-4 text-green-500 flex-shrink-0" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <button className={`w-full ${plan.popular ? 'btn-primary' : 'btn-secondary'}`}>
-                  Get Started
-                </button>
-              </motion.div>
-            ))}
+              {
+                name: 'Free', price: '$0', period: '',
+                tagline: 'Perfect for getting started',
+                accent: 'from-slate-500 to-gray-500',
+                btnStyle: 'border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800',
+                icon: '🌱',
+                features: [
+                  { text: 'Up to 3 Trips', highlight: false },
+                  { text: 'Basic Itinerary', highlight: false },
+                  { text: 'Expense Tracking', highlight: false },
+                  { text: 'Community Support', highlight: false },
+                ],
+                missingFeatures: ['Destinations', 'Wishlist', 'Invitations'],
+                popular: false,
+              },
+              {
+                name: 'Pro', price: '$800', period: '/month',
+                tagline: 'Best for avid travelers',
+                accent: 'from-primary-500 to-accent-500',
+                btnStyle: 'bg-gradient-to-r from-primary-500 to-accent-500 text-white hover:shadow-lg hover:shadow-primary-500/25',
+                icon: '🚀',
+                features: [
+                  { text: 'Unlimited Trips', highlight: true },
+                  { text: 'AI-Powered Itinerary', highlight: false },
+                  { text: 'Destinations Explorer', highlight: true },
+                  { text: 'Wishlist', highlight: true },
+                  { text: 'Invitations & Sharing', highlight: true },
+                  { text: 'Group Collaboration', highlight: false },
+                  { text: 'Priority Support', highlight: false },
+                ],
+                popular: true,
+              },
+              {
+                name: 'Team', price: '$2500', period: '/month',
+                tagline: 'For groups & organizations',
+                accent: 'from-violet-500 to-purple-600',
+                btnStyle: 'bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:shadow-lg hover:shadow-violet-500/25',
+                icon: '👥',
+                features: [
+                  { text: 'Everything in Pro', highlight: true },
+                  { text: '4 Team Members Included', highlight: true },
+                  { text: 'Per-Person Data & Settings', highlight: false },
+                  { text: 'Team Dashboard', highlight: false },
+                  { text: 'Admin Controls', highlight: false },
+                  { text: 'API Access', highlight: false },
+                  { text: 'Custom Integrations', highlight: false },
+                ],
+                popular: false,
+              },
+            ].map((plan, idx) => {
+              const isExpanded = expandedPlan === plan.name;
+              return (
+                <motion.div
+                  key={plan.name}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: idx * 0.1 }}
+                  viewport={{ once: true }}
+                  className={`card p-8 cursor-pointer select-none relative overflow-hidden ${
+                    plan.popular ? 'ring-2 ring-primary-500 shadow-xl shadow-primary-500/10' : ''
+                  }`}
+                  onClick={() => setExpandedPlan(isExpanded ? null : plan.name)}
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-br ${plan.accent} opacity-[0.03] pointer-events-none`} />
+
+                  {plan.popular && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-primary-500 to-accent-500 text-white text-xs font-semibold rounded-full z-10">
+                      Most Popular
+                    </span>
+                  )}
+
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{plan.icon}</span>
+                      <h3 className="text-xl font-semibold">{plan.name}</h3>
+                    </div>
+                    <motion.div
+                      animate={{ rotate: isExpanded ? 180 : 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <FiChevronDown className="w-5 h-5 text-dark-400" />
+                    </motion.div>
+                  </div>
+
+                  <div className="flex items-baseline gap-1 mb-2">
+                    <span className="text-4xl font-bold">{plan.price}</span>
+                    {plan.period && <span className="text-dark-500 dark:text-dark-400">{plan.period}</span>}
+                  </div>
+                  <p className="text-xs text-dark-400 mb-4">{plan.tagline}</p>
+
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="overflow-hidden"
+                      >
+                        <div className={`h-px bg-gradient-to-r ${plan.accent} mb-5 opacity-30`} />
+
+                        <ul className="space-y-3 mb-5">
+                          {plan.features.map((f) => (
+                            <li key={f.text} className={`flex items-center gap-3 text-sm ${
+                              f.highlight
+                                ? 'text-dark-900 dark:text-white font-semibold'
+                                : 'text-dark-600 dark:text-dark-400'
+                            }`}>
+                              <span className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                f.highlight
+                                  ? 'bg-green-100 dark:bg-green-900/30'
+                                  : plan.popular
+                                    ? 'bg-primary-100 dark:bg-primary-900/30'
+                                    : 'bg-slate-100 dark:bg-slate-800'
+                              }`}>
+                                <FiCheck className={`w-3 h-3 ${
+                                  f.highlight ? 'text-green-600' : 'text-green-500'
+                                }`} />
+                              </span>
+                              {f.text}
+                              {f.highlight && (
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                                  plan.name === 'Pro'
+                                    ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-600'
+                                    : 'bg-violet-100 dark:bg-violet-900/30 text-violet-600'
+                                }`}>Popular</span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+
+                        {plan.missingFeatures && plan.missingFeatures.length > 0 && (
+                          <div className="mb-6">
+                            <p className="text-xs text-dark-400 font-medium mb-2 uppercase tracking-wide">Not included:</p>
+                            <ul className="space-y-2">
+                              {plan.missingFeatures.map((f) => (
+                                <li key={f} className="flex items-center gap-3 text-sm text-dark-400 dark:text-dark-500">
+                                  <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-dark-700 flex items-center justify-center flex-shrink-0">
+                                    <span className="text-slate-400 text-xs">✕</span>
+                                  </span>
+                                  {f}
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 font-medium">Upgrade</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/auth/register?plan=${plan.name}`);
+                          }}
+                          className={`w-full py-3 rounded-xl font-medium transition-all duration-200 ${plan.btnStyle}`}
+                        >
+                          {plan.name === 'Free' ? 'Start Free' : `Subscribe to ${plan.name}`}
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {!isExpanded && (
+                    <p className="text-xs text-primary-500 font-medium mt-3">Click to see features →</p>
+                  )}
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -346,16 +522,16 @@ const Landing = () => {
               ))}
             </div>
             <div className="card p-8">
-              <div className="grid md:grid-cols-2 gap-6">
-                <input type="text" placeholder="Your Name" className="input-field" />
-                <input type="email" placeholder="Your Email" className="input-field" />
+              <form onSubmit={handleContactSubmit} className="grid md:grid-cols-2 gap-6">
+                <input type="text" value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="Your Name" required className="input-field" />
+                <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="Your Email" required className="input-field" />
                 <div className="md:col-span-2">
-                  <textarea rows={4} placeholder="Your Message" className="input-field" />
+                  <textarea rows={4} value={contactMessage} onChange={(e) => setContactMessage(e.target.value)} placeholder="Your Message" required className="input-field" />
                 </div>
                 <div className="md:col-span-2">
-                  <button className="btn-primary w-full">Send Message</button>
+                  <button type="submit" disabled={contactSending} className="btn-primary w-full">{contactSending ? 'Sending...' : 'Send Message'}</button>
                 </div>
-              </div>
+              </form>
             </div>
           </div>
         </div>

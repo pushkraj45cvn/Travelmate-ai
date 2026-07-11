@@ -10,7 +10,7 @@ const swaggerUi = require('swagger-ui-express');
 const colors = require('colors');
 
 // Load env vars
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Connect to database
 const connectDB = require('./config/db');
@@ -35,6 +35,7 @@ const galleryRoutes = require('./routes/gallery');
 const destinationRoutes = require('./routes/destinations');
 const dashboardRoutes = require('./routes/dashboard');
 const adminRoutes = require('./routes/admin');
+const aiRoutes = require('./routes/ai');
 
 // Initialize express
 const app = express();
@@ -111,6 +112,7 @@ app.use('/api/trips/:tripId/gallery', galleryRoutes);
 app.use('/api/destinations', destinationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Serve frontend build for client-side routes
 const clientBuildPath = path.join(__dirname, '..', 'client', 'dist');

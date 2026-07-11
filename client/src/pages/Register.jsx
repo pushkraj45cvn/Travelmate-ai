@@ -1,26 +1,37 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
-import { FiEye, FiEyeOff, FiUser, FiMail, FiLock } from 'react-icons/fi';
+import { FiEye, FiEyeOff, FiUser, FiMail, FiLock, FiStar } from 'react-icons/fi';
 import { useAuth } from '../hooks/useAuth';
 
 const Register = () => {
   const { isLoading, handleRegister } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [searchParams] = useSearchParams();
+  const selectedPlan = searchParams.get('plan') || 'Free';
   const { register, handleSubmit, formState: { errors } } = useForm();
 
   const onSubmit = async (data) => {
-    await handleRegister({ name: data.name, email: data.email, password: data.password });
+    const plan = selectedPlan === 'Free' ? 'free' : selectedPlan === 'Pro' ? 'pro' : 'team';
+    await handleRegister({ name: data.name, email: data.email, password: data.password, plan });
   };
 
   return (
     <div>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <h2 className="text-3xl font-bold mb-2">Create Account</h2>
-        <p className="text-dark-500 dark:text-dark-400 mb-8">
+        <p className="text-dark-500 dark:text-dark-400 mb-2">
           Start your travel planning journey
         </p>
+        {selectedPlan !== 'Free' && (
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-primary-500 to-accent-500 text-white shadow-sm">
+              <FiStar className="w-3 h-3" />
+              {selectedPlan} Plan
+            </span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div>

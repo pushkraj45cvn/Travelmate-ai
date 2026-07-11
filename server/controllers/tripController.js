@@ -1,4 +1,5 @@
 const Trip = require('../models/Trip');
+const Review = require('../models/Review');
 const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
 const { paginate, buildFilter, buildSearchQuery, buildSort } = require('../utils/helpers');
@@ -286,5 +287,85 @@ exports.removeCollaborator = asyncHandler(async (req, res, next) => {
   res.status(200).json({
     success: true,
     data: trip,
+  });
+});
+
+// @desc    Add review to a trip
+// @route   POST /api/trips/:id/review
+// @access  Private
+exports.addTripReview = asyncHandler(async (req, res, next) => {
+  const trip = await Trip.findById(req.params.id);
+
+  if (!trip) {
+    return next(new ErrorResponse(`Trip not found with id ${req.params.id}`, 404));
+  }
+
+  // Check if user is owner or collaborator
+  const isOwner = trip.owner.toString() === req.user.id;
+  const isCollaborator = trip.collaborators.some(c => c.user.toString() === req.user.id);
+  if (!isOwner && !isCollaborator) {
+    return next(new ErrorResponse('Not authorized to review this trip', 403));
+  }
+
+  // Check if trip is completed
+  if (trip.status !== 'completed') {
+    return next(new ErrorResponse('Can only review completed trips', 400));
+  }
+
+  // Check if already reviewed
+  const existingReview = await Review.findOne({ trip: req.params.id, user: req.user.id });
+  if (existingReview) {
+    return next(new ErrorResponse('You have already reviewed this trip', 400));
+  }
+
+  const review = await Review.create({
+    trip: req.params.id,
+    user: req.user.id,
+    rating: req.body.rating,
+    title: req.body.title,
+    comment: req.body.comment,
+    isPublic: true,
+  });
+
+  res.status(201).json({
+    success: true,
+    data: review,
+  });
+});
+
+// @desc    Get review for a trip by current user
+// @route   GET /api/trips/:id/review
+// @access  Private
+exports.getTripReview = asyncHandler(async (req, res, next) => {
+  const review = await Review.findOne({ trip: req.params.id, user: req.user.id });
+
+  res.status(200).json({
+    success: true,
+    data: review || null,
+  });
+});
+
+// @desc    Get featured reviews (public)
+// @route   GET /api/trips/reviews/featured
+// @access  Public
+exports.getFeaturedReviews = asyncHandler(async (req, res, next) => {
+  const reviews = await Review.find({ isPublic: true })
+    .populate('user', 'name avatar')
+    .sort('-createdAt')
+    .limit(20);
+
+  const data = reviews.map((r) => ({
+    _id: r._id,
+    rating: r.rating,
+    title: r.title || '',
+    text: r.comment,
+    name: r.user?.name || 'Anonymous',
+    avatar: r.user?.avatar || '',
+    role: 'Traveler',
+  }));
+
+  res.status(200).json({
+    success: true,
+    data,
   });
 });

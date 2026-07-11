@@ -84,6 +84,21 @@ const userSchema = new mongoose.Schema(
         type: String,
       },
     ],
+    plan: {
+      type: String,
+      enum: ['free', 'pro', 'team'],
+      default: 'free',
+    },
+    teamId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    teamRole: {
+      type: String,
+      enum: ['owner', 'member', null],
+      default: null,
+    },
     lastLogin: Date,
     isActive: {
       type: Boolean,

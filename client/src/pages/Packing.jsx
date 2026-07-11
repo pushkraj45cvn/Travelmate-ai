@@ -48,9 +48,11 @@ const Packing = () => {
   };
 
   const items = packingList?.items || [];
+  const itemLimit = packingList?.itemLimit || 20;
   const total = items.length;
   const checked = items.filter(i => i.isChecked).length;
-  const progress = total > 0 ? Math.round((checked / total) * 100) : 0;
+  const limitProgress = Math.min(Math.round((total / itemLimit) * 100), 100);
+  const isOverLimit = total > itemLimit;
 
   return (
     <div>
@@ -61,7 +63,27 @@ const Packing = () => {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold">Packing List</h1>
-          <p className="text-dark-500 dark:text-dark-400 mt-1">{checked}/{total} items packed</p>
+          <p className="text-dark-500 dark:text-dark-400 mt-1">
+            {total}/{itemLimit} items
+            {checked > 0 && <span className="text-dark-400"> ({checked} packed)</span>}
+          </p>
+        </div>
+        <div className="text-right">
+          <button
+            onClick={async () => {
+              const newLimit = prompt('Set item limit:', itemLimit);
+              if (newLimit && parseInt(newLimit) > 0) {
+                try {
+                  const res = await api.put(`/trips/${tripId}/packing`, { itemLimit: parseInt(newLimit) });
+                  setPackingList(res.data.data);
+                  toast.success('Item limit updated');
+                } catch (err) { toast.error('Failed to update limit'); }
+              }
+            }}
+            className="text-xs text-primary-500 hover:text-primary-600 font-medium"
+          >
+            Change limit
+          </button>
         </div>
       </div>
 
@@ -69,16 +91,19 @@ const Packing = () => {
       <div className="card p-6 mb-8">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm font-medium">Packing Progress</span>
-          <span className="text-sm font-bold text-primary-500">{progress}%</span>
+          <span className="text-sm font-bold text-primary-500">{limitProgress}%</span>
         </div>
         <div className="w-full h-3 bg-gray-100 dark:bg-dark-700 rounded-full overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
+            animate={{ width: `${Math.min(limitProgress, 100)}%` }}
             transition={{ duration: 0.8 }}
-            className="h-full bg-gradient-to-r from-primary-500 to-accent-500 rounded-full"
+            className={`h-full rounded-full ${isOverLimit ? 'bg-red-500' : 'bg-gradient-to-r from-primary-500 to-accent-500'}`}
           />
         </div>
+        {isOverLimit && (
+          <p className="text-xs text-red-500 mt-2">⚠️ {total - itemLimit} item(s) over the limit</p>
+        )}
       </div>
 
       {/* Add Item */}

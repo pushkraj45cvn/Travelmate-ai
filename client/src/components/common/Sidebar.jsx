@@ -1,20 +1,64 @@
 import { Link, useLocation } from 'react-router-dom';
-import { FiX, FiHome, FiMap, FiCompass, FiHeart, FiUsers, FiBell, FiMail, FiMenu } from 'react-icons/fi';
+import { useSelector } from 'react-redux';
+import { useState, useEffect } from 'react';
+import { FiX, FiHome, FiMap, FiCompass, FiHeart, FiUsers, FiBell, FiMail, FiMenu, FiLock, FiCircle, FiKey, FiLink, FiCpu } from 'react-icons/fi';
 import { MdOutlineFlight, MdOutlineDashboard, MdOutlineInventory2 } from 'react-icons/md';
 import { BsSuitcase2, BsCalendarCheck, BsImage } from 'react-icons/bs';
 import { motion, AnimatePresence } from 'framer-motion';
+import api from '../../services/api';
 
-const navItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: MdOutlineDashboard },
-  { path: '/trips', label: 'My Trips', icon: BsSuitcase2 },
-  { path: '/trips/new', label: 'New Trip', icon: MdOutlineFlight },
-  { path: '/destinations', label: 'Destinations', icon: FiCompass },
-  { path: '/wishlist', label: 'Wishlist', icon: FiHeart },
-  { path: '/invitations', label: 'Invitations', icon: FiMail },
-];
+const PremiumNavItem = ({ item, active, onClose }) => {
+  const Icon = item.icon;
+  return (
+    <div className="relative group">
+      <Link
+        to={item.path}
+        onClick={onClose}
+        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+          active
+            ? 'bg-gradient-to-r from-primary-500/10 to-accent-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/20'
+            : 'text-dark-600 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-700 hover:text-dark-900 dark:hover:text-white'
+        }`}
+      >
+        <Icon className={`w-5 h-5 ${active ? 'text-primary-500' : ''}`} />
+        {item.label}
+        <FiLock className="w-3 h-3 text-amber-500 ml-auto" />
+      </Link>
+      <div className="absolute -top-2 -right-1 px-1.5 py-0.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] font-bold rounded-full">
+        PRO
+      </div>
+    </div>
+  );
+};
 
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
+  const { user } = useSelector((state) => state.auth);
+  const userPlan = user?.plan || 'free';
+  const isPremium = userPlan === 'pro' || userPlan === 'team';
+  const [teamMembers, setTeamMembers] = useState([]);
+
+  useEffect(() => {
+    if (userPlan === 'team') {
+      api.get('/users/team-members')
+        .then(res => setTeamMembers(res.data.data || []))
+        .catch(() => {});
+    }
+  }, [userPlan]);
+
+  const navItems = [
+    { path: '/dashboard', label: 'Dashboard', icon: MdOutlineDashboard },
+    { path: '/trips', label: 'My Trips', icon: BsSuitcase2 },
+    { path: '/trips/new', label: 'New Trip', icon: MdOutlineFlight },
+    { path: '/destinations', label: 'Destinations', icon: FiCompass, premium: true },
+    { path: '/wishlist', label: 'Wishlist', icon: FiHeart, premium: true },
+    { path: '/invitations', label: 'Invitations', icon: FiMail, premium: true },
+    ...(userPlan === 'team' ? [
+      { path: '/team', label: 'Team Dashboard', icon: FiUsers, premium: false },
+      { path: '/developer', label: 'API Access', icon: FiKey, premium: false },
+      { path: '/integrations', label: 'Integrations', icon: FiLink, premium: false },
+    ] : []),
+  ];
 
   const isActive = (path) => {
     if (path === '/trips' && location.pathname.startsWith('/trips') && location.pathname !== '/trips/new') {
@@ -49,6 +93,11 @@ const Sidebar = ({ isOpen, onClose }) => {
         {navItems.map((item) => {
           const active = isActive(item.path);
           const Icon = item.icon;
+
+          if (item.premium && !isPremium) {
+            return <PremiumNavItem key={item.path} item={item} active={active} onClose={onClose} />;
+          }
+
           return (
             <Link
               key={item.path}
@@ -66,6 +115,31 @@ const Sidebar = ({ isOpen, onClose }) => {
           );
         })}
       </nav>
+
+      {/* Team Members */}
+      {userPlan === 'team' && teamMembers.length > 0 && (
+        <div className="px-4 py-3 border-t border-gray-100 dark:border-dark-700">
+          <p className="text-[10px] uppercase tracking-wider text-dark-400 font-medium mb-2 px-2">
+            Team Members ({teamMembers.length}/4)
+          </p>
+          <div className="space-y-1">
+            {teamMembers.map((member) => (
+              <div key={member._id} className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 ${member.teamRole === 'owner' ? 'bg-gradient-to-br from-violet-500 to-purple-600' : 'bg-gradient-to-br from-primary-400 to-accent-400'}`}>
+                  {member.name?.charAt(0)?.toUpperCase() || '?'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-dark-700 dark:text-dark-300 truncate">
+                    {member.name}
+                    {member.teamRole === 'owner' && <span className="text-[10px] text-violet-500 ml-1 font-semibold">Owner</span>}
+                  </p>
+                  <p className="text-[10px] text-dark-400 truncate">{member.email}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Bottom section */}
       <div className="p-4 border-t border-gray-100 dark:border-dark-700">

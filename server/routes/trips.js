@@ -11,10 +11,16 @@ const {
   updateTripStatus,
   addCollaborator,
   removeCollaborator,
+  addTripReview,
+  getTripReview,
+  getFeaturedReviews,
 } = require('../controllers/tripController');
 const { protect } = require('../middlewares/auth');
 const { createTripValidator, updateTripValidator } = require('../validators/trip');
 const { validate } = require('../validators/index');
+
+// Public routes
+router.get('/reviews/featured', getFeaturedReviews);
 
 router.route('/')
   .post(protect, createTripValidator, validate, createTrip)
@@ -30,5 +36,7 @@ router.put('/:id/archive', protect, archiveTrip);
 router.put('/:id/status', protect, updateTripStatus);
 router.post('/:id/collaborators', protect, addCollaborator);
 router.delete('/:id/collaborators/:userId', protect, removeCollaborator);
+router.post('/:id/review', protect, addTripReview);
+router.get('/:id/review', protect, getTripReview);
 
 module.exports = router;

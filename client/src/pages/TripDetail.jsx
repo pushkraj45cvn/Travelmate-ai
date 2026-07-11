@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiEdit2, FiTrash2, FiCalendar, FiMapPin, FiUsers, FiDollarSign, FiArrowLeft, FiMoreVertical, FiSend, FiCheckSquare, FiPlus } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiCalendar, FiMapPin, FiUsers, FiDollarSign, FiArrowLeft, FiMoreVertical, FiSend, FiCheckSquare, FiPlus, FiStar } from 'react-icons/fi';
 import { useSelector, useDispatch } from 'react-redux';
 import { getTrip, deleteTrip } from '../redux/slices/tripSlice';
 import { formatDate, getDaysBetween, getTripStatusColor, getTravelTypeColor, formatCurrency } from '../utils/formatters';
@@ -30,6 +30,11 @@ const TripDetail = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('viewer');
   const [sendingInvite, setSendingInvite] = useState(false);
+  const [myReview, setMyReview] = useState(null);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewTitle, setReviewTitle] = useState('');
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewLoading, setReviewLoading] = useState(false);
 
   useEffect(() => {
     dispatch(getTrip(id));
@@ -39,8 +44,21 @@ const TripDetail = () => {
     if (trip) {
       fetchExpenseSummary();
       fetchPackingData();
+      fetchMyReview();
     }
   }, [trip]);
+
+  const fetchMyReview = async () => {
+    try {
+      const res = await api.get(`/trips/${id}/review`);
+      if (res.data.data) {
+        setMyReview(res.data.data);
+        setReviewRating(res.data.data.rating);
+        setReviewTitle(res.data.data.title || '');
+        setReviewComment(res.data.data.comment || '');
+      }
+    } catch (err) {}
+  };
 
   const fetchExpenseSummary = async () => {
     try {
@@ -53,9 +71,9 @@ const TripDetail = () => {
     try {
       const list = await packingService.getPackingList(trip._id);
       setPackingItems(list.items || []);
+      const limit = list.itemLimit || 20;
       const total = list.items?.length || 0;
-      const checked = list.items?.filter(i => i.isChecked).length || 0;
-      setPackingProgress(total > 0 ? Math.round((checked / total) * 100) : 0);
+      setPackingProgress(Math.min(Math.round((total / limit) * 100), 100));
     } catch (err) {}
   };
 
@@ -97,6 +115,32 @@ const TripDetail = () => {
       fetchPackingData();
     } catch (err) {
       toast.error('Failed to delete item');
+    }
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    if (!reviewRating) {
+      toast.error('Please select a rating');
+      return;
+    }
+    if (!reviewComment.trim()) {
+      toast.error('Please write a comment');
+      return;
+    }
+    setReviewLoading(true);
+    try {
+      await api.post(`/trips/${id}/review`, {
+        rating: reviewRating,
+        title: reviewTitle,
+        comment: reviewComment,
+      });
+      toast.success('Review submitted!');
+      fetchMyReview();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to submit review');
+    } finally {
+      setReviewLoading(false);
     }
   };
 
@@ -290,17 +334,15 @@ const TripDetail = () => {
           <Link to={`/trips/${id}/packing`} className="text-sm text-primary-500 hover:text-primary-600">Manage All</Link>
         </div>
 
-        {packingProgress > 0 && (
-          <div className="mb-4">
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-dark-500">Progress</span>
-              <span className="font-medium">{packingProgress}%</span>
-            </div>
-            <div className="h-2 rounded-full bg-gray-200 dark:bg-dark-700 overflow-hidden">
-              <div className="h-full rounded-full bg-primary-500 transition-all" style={{ width: `${packingProgress}%` }} />
-            </div>
+        <div className="mb-4">
+          <div className="flex justify-between text-sm mb-1">
+            <span className="text-dark-500">Items</span>
+            <span className="font-medium">{packingItems.length}/20 · {packingProgress}%</span>
           </div>
-        )}
+          <div className="h-2 rounded-full bg-gray-200 dark:bg-dark-700 overflow-hidden">
+            <div className="h-full rounded-full bg-primary-500 transition-all" style={{ width: `${packingProgress}%` }} />
+          </div>
+        </div>
 
         <div className="space-y-1 max-h-64 overflow-y-auto mb-3">
           {packingItems.length === 0 ? (
@@ -403,6 +445,71 @@ const TripDetail = () => {
           </form>
         )}
       </Card>
+
+      {/* Review Section */}
+      {trip.status === 'completed' && (
+        <Card className="mt-6">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <FiStar className="w-5 h-5 text-yellow-400" /> Rate This Trip
+          </h2>
+
+          {myReview ? (
+            <div className="space-y-3">
+              <div className="flex gap-1 mb-2">
+                {Array.from({ length: 5 }, (_, i) => (
+                  <FiStar key={i} className={`w-5 h-5 ${i < myReview.rating ? 'fill-yellow-400 text-yellow-400' : 'text-dark-300'}`} />
+                ))}
+              </div>
+              {myReview.title && <p className="font-semibold text-sm">{myReview.title}</p>}
+              <p className="text-dark-600 dark:text-dark-400 text-sm italic">"{myReview.comment}"</p>
+              <p className="text-xs text-green-600 font-medium">✓ You reviewed this trip</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmitReview} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Rating</label>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewRating(star)}
+                      className="p-1 transition-colors"
+                    >
+                      <FiStar className={`w-7 h-7 ${star <= reviewRating ? 'fill-yellow-400 text-yellow-400' : 'text-dark-300 hover:text-yellow-300'}`} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Title (optional)</label>
+                <input
+                  type="text"
+                  value={reviewTitle}
+                  onChange={(e) => setReviewTitle(e.target.value)}
+                  placeholder="Summarize your experience"
+                  className="input-field text-sm"
+                  maxLength={200}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Comment</label>
+                <textarea
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder="Share your trip experience..."
+                  className="input-field text-sm min-h-[100px]"
+                  maxLength={2000}
+                  required
+                />
+              </div>
+              <button type="submit" disabled={reviewLoading} className="btn-primary">
+                {reviewLoading ? 'Submitting...' : 'Submit Review'}
+              </button>
+            </form>
+          )}
+        </Card>
+      )}
     </div>
   );
 };

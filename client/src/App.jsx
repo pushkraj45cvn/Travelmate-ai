@@ -39,6 +39,7 @@ const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
 const AdminTrips = lazy(() => import('./pages/admin/AdminTrips'));
 const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const AiAssistant = lazy(() => import('./components/ai/AIAssistant'));
 
 const AuthRedirect = () => {
   const { user } = useSelector((state) => state.auth);
@@ -46,7 +47,7 @@ const AuthRedirect = () => {
 };
 
 const App = () => {
-  const { isAuthenticated } = useSelector((state) => state.auth);
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
 
   return (
     <Suspense fallback={<LoadingScreen />}>
@@ -116,6 +117,11 @@ const App = () => {
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
+      {isAuthenticated && user?.role !== 'admin' && (
+        <Suspense fallback={null}>
+          <AiAssistant />
+        </Suspense>
+      )}
     </Suspense>
   );
 };
