@@ -101,9 +101,9 @@ const Destinations = () => {
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary-400 to-accent-500 flex items-center justify-center">
             <FiLock className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-2xl font-bold mb-3">Destinations is Pro Feature</h2>
+          <h2 className="text-2xl font-bold mb-3">It's a Pro Feature</h2>
           <p className="text-dark-500 dark:text-dark-400 max-w-md mx-auto mb-6">
-            Explore 108+ cities across 48 countries worldwide with detailed guides, hotels, restaurants, and travel tips. Upgrade to <strong>Pro</strong> or <strong>Team</strong> to unlock all destinations.
+            Subscribe to <strong>Pro</strong> or <strong>Team</strong> to view all destinations.
           </p>
           <Link
             to="/settings?tab=plan"
