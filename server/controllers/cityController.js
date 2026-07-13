@@ -19,6 +19,11 @@ exports.getCities = asyncHandler(async (req, res, next) => {
   if (req.query.isPopular === 'true') filter.isPopular = true;
   if (req.query.isCapital === 'true') filter.isCapital = true;
 
+  // Text search
+  if (req.query.search) {
+    filter.name = { $regex: req.query.search, $options: 'i' };
+  }
+
   // Plan filtering
   if (userPlan === 'free') {
     filter.isPremium = { $ne: true };
