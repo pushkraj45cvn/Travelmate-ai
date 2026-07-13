@@ -82,6 +82,10 @@ const destinationSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isPremium: {
+      type: Boolean,
+      default: false,
+    },
     coordinates: {
       lat: { type: Number, required: true },
       lng: { type: Number, required: true },
@@ -94,6 +98,7 @@ const destinationSchema = new mongoose.Schema(
 
 destinationSchema.index({ name: 'text', country: 'text', description: 'text' });
 destinationSchema.index({ isPopular: 1 });
+destinationSchema.index({ isPremium: 1 });
 destinationSchema.index({ 'coordinates.lat': 1, 'coordinates.lng': 1 });
 
 module.exports = mongoose.model('Destination', destinationSchema);

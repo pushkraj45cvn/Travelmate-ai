@@ -8,12 +8,20 @@ const { paginate, buildSearchQuery } = require('../utils/helpers');
 
 // @desc    Get all destinations
 // @route   GET /api/destinations
-// @access  Public
+// @access  Public (free users see only free destinations)
 exports.getDestinations = asyncHandler(async (req, res, next) => {
   const { skip, limit, page } = paginate(req.query.page, req.query.limit);
 
   const filter = {};
   if (req.query.isPopular === 'true') filter.isPopular = true;
+  if (req.query.isPremium === 'true') filter.isPremium = true;
+  if (req.query.isPremium === 'false') filter.isPremium = false;
+
+  // Plan-based filtering: free users can't see premium destinations
+  const userPlan = req.user?.plan || 'free';
+  if (userPlan === 'free') {
+    filter.isPremium = { $ne: true };
+  }
 
   const searchQuery = buildSearchQuery(req.query, ['name', 'country', 'description']);
   const finalFilter = { ...filter, ...searchQuery };
@@ -21,7 +29,7 @@ exports.getDestinations = asyncHandler(async (req, res, next) => {
   const destinations = await Destination.find(finalFilter)
     .skip(skip)
     .limit(limit)
-    .sort(req.query.sort || '-isPopular');
+    .sort(req.query.sort || '-isPremium -isPopular');
 
   const total = await Destination.countDocuments(finalFilter);
 
@@ -37,12 +45,20 @@ exports.getDestinations = asyncHandler(async (req, res, next) => {
 
 // @desc    Get single destination
 // @route   GET /api/destinations/:id
-// @access  Public
+// @access  Public (premium destinations require pro/team)
 exports.getDestination = asyncHandler(async (req, res, next) => {
   const destination = await Destination.findById(req.params.id);
 
   if (!destination) {
     return next(new ErrorResponse(`Destination not found with id ${req.params.id}`, 404));
+  }
+
+  // Check plan access for premium destinations
+  const userPlan = req.user?.plan || 'free';
+  if (destination.isPremium && userPlan === 'free') {
+    return next(
+      new ErrorResponse('Upgrade to Pro or Team plan to view this premium destination', 403)
+    );
   }
 
   // Get reviews

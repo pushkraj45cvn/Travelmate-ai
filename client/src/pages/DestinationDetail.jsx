@@ -1,16 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { FiArrowLeft, FiHeart, FiMapPin, FiStar, FiPlusCircle } from 'react-icons/fi';
+import { FiArrowLeft, FiHeart, FiMapPin, FiStar, FiPlusCircle, FiLock, FiCrown } from 'react-icons/fi';
 import api from '../services/api';
 import { toast } from 'react-toastify';
 
 const DestinationDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useSelector((state) => state.auth);
   const [destination, setDestination] = useState(null);
   const [loading, setLoading] = useState(true);
   const [inWishlist, setInWishlist] = useState(false);
+  const [premiumBlocked, setPremiumBlocked] = useState(false);
+
+  const isFreePlan = user && user.plan === 'free';
 
   useEffect(() => {
     const fetch = async () => {
@@ -21,6 +26,8 @@ const DestinationDetail = () => {
         ]);
         if (destRes.status === 'fulfilled') {
           setDestination(destRes.value.data.data);
+        } else if (destRes.status === 'rejected' && destRes.reason?.response?.status === 403) {
+          setPremiumBlocked(true);
         }
         if (wishRes.status === 'fulfilled') {
           const items = wishRes.value.data.data?.destinations || [];
@@ -47,8 +54,38 @@ const DestinationDetail = () => {
     }
   };
 
-  if (loading || !destination) {
+  if (loading || (!destination && !premiumBlocked)) {
     return <div className="space-y-6">{[1,2,3].map(i => <div key={i} className="skeleton h-48 rounded-2xl" />)}</div>;
+  }
+
+  // Premium destination locked for free users
+  if (premiumBlocked) {
+    return (
+      <div>
+        <Link to="/destinations" className="flex items-center gap-2 text-dark-500 dark:text-dark-400 hover:text-primary-500 mb-6 text-sm">
+          <FiArrowLeft className="w-4 h-4" /> Back to Destinations
+        </Link>
+        <div className="card p-16 text-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
+            <FiLock className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold mb-3">Premium Destination</h2>
+          <p className="text-dark-500 dark:text-dark-400 max-w-md mx-auto mb-2">
+            This destination is available exclusively on the <strong>Pro</strong> and <strong>Team</strong> plans.
+          </p>
+          <p className="text-sm text-dark-400 max-w-md mx-auto mb-8">
+            Upgrade to access detailed guides, hotel recommendations, restaurant picks, and travel tips.
+          </p>
+          <Link
+            to="/settings?tab=plan"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-semibold hover:shadow-lg hover:shadow-violet-500/25 transition-all"
+          >
+            <FiCrown className="w-4 h-4" />
+            Upgrade to Unlock
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -60,8 +97,18 @@ const DestinationDetail = () => {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         {/* Hero */}
         <div className="h-64 md:h-80 rounded-2xl overflow-hidden bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-8xl relative mb-8">
-          {destination.name === 'Paris' ? '🗼' : destination.name === 'Tokyo' ? '🗾' : destination.name === 'Bali' ? '🏝️' : destination.name === 'New York City' ? '🗽' : destination.name === 'Dubai' ? '🏙️' : '📍'}
+          {destination.name === 'Paris' ? '🗼' : destination.name === 'Tokyo' ? '🗾' : destination.name === 'Bali' ? '🏝️' : destination.name === 'New York City' ? '🗽' : destination.name === 'Dubai' ? '🏙️' : destination.name === 'Rome' ? '🏛️' : destination.name === 'Bangkok' ? '🛕' : destination.name === 'London' ? '🎡' : destination.name === 'Sydney' ? '🏄' : destination.name === 'Barcelona' ? '🏛️' : destination.name === 'Santorini' ? '🏛️' : destination.name === 'Machu Picchu' ? '🏔️' : destination.name === 'Maldives' ? '🏝️' : destination.name === 'Swiss Alps' ? '🏔️' : destination.name === 'Kyoto' ? '⛩️' : destination.name === 'Cape Town' ? '🌊' : destination.name === 'Amalfi Coast' ? '🏖️' : destination.name === 'Banff National Park' ? '🏔️' : destination.name === 'Queenstown' ? '⛰️' : destination.name === 'Reykjavik & Golden Circle' ? '🌋' : '📍'}
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+          <div className="absolute top-4 right-4 flex gap-2">
+            {destination.isPremium && (
+              <span className="flex items-center gap-1 text-xs bg-gradient-to-r from-violet-500 to-purple-600 text-white px-3 py-1 rounded-full font-medium shadow-lg">
+                <FiCrown className="w-3.5 h-3.5" /> Premium
+              </span>
+            )}
+            {destination.isPopular && (
+              <span className="badge-primary text-xs shadow-lg">Popular</span>
+            )}
+          </div>
           <div className="absolute bottom-6 left-6 right-6">
             <div className="flex items-start justify-between">
               <div>
