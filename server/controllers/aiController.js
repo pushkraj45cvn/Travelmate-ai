@@ -1,9 +1,10 @@
 const AiChat = require('../models/AiChat');
 const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
-const { getOpenAIResponse, getRuleBasedResponse, generateTitle } = require('../services/aiService');
+const { getAIResponse, getRuleBasedResponse, generateTitle } = require('../services/aiService');
 
-const HAS_OPENAI = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key';
+const HAS_AI = (process.env.DEEPSEEK_API_KEY && process.env.DEEPSEEK_API_KEY !== 'your-deepseek-api-key') ||
+                (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key');
 
 // @desc    Send message to AI assistant
 // @route   POST /api/ai/chat
@@ -49,8 +50,8 @@ exports.sendMessage = asyncHandler(async (req, res, next) => {
 
   // Generate AI response
   let aiResponse;
-  if (HAS_OPENAI) {
-    aiResponse = await getOpenAIResponse(aiChat.messages, aiChat.context);
+  if (HAS_AI) {
+    aiResponse = await getAIResponse(aiChat.messages, aiChat.context);
   } else {
     aiResponse = getRuleBasedResponse(aiChat.messages, aiChat.context);
   }
@@ -166,8 +167,8 @@ exports.getSuggestions = asyncHandler(async (req, res, next) => {
 
   let aiResponse;
 
-  if (HAS_OPENAI) {
-    aiResponse = await getOpenAIResponse([{ role: 'user', content: prompt }], context);
+  if (HAS_AI) {
+    aiResponse = await getAIResponse([{ role: 'user', content: prompt }], context);
   } else {
     aiResponse = getRuleBasedResponse([{ role: 'user', content: prompt }], context);
   }

@@ -2,14 +2,18 @@
  * AI Travel Assistant Service
  * 
  * Provides intelligent travel planning responses.
- * If OPENAI_API_KEY is set, uses OpenAI API for dynamic responses.
- * Otherwise uses a comprehensive rule-based system.
+ * Uses DeepSeek API (or OpenAI as fallback) for dynamic responses.
+ * Falls back to rule-based system if no API key is configured.
  */
 
-const AI_MODEL = process.env.OPENAI_MODEL || 'gpt-3.5-turbo';
-const API_KEY = process.env.OPENAI_API_KEY;
-const API_URL = 'https://api.openai.com/v1/chat/completions';
-const HAS_OPENAI = API_KEY && API_KEY !== 'your-openai-api-key';
+const USE_DEEPSEEK = process.env.DEEPSEEK_API_KEY && process.env.DEEPSEEK_API_KEY !== 'your-deepseek-api-key';
+const USE_OPENAI = !USE_DEEPSEEK && process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key';
+
+const AI_CONFIG = USE_DEEPSEEK
+  ? { url: 'https://api.deepseek.com/v1/chat/completions', key: process.env.DEEPSEEK_API_KEY, model: 'deepseek-chat' }
+  : { url: 'https://api.openai.com/v1/chat/completions', key: process.env.OPENAI_API_KEY, model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo' };
+
+const HAS_AI = USE_DEEPSEEK || USE_OPENAI;
 
 /**
  * Generate a system prompt based on user context
@@ -39,16 +43,16 @@ function buildSystemPrompt(context = {}) {
 }
 
 /**
- * Get AI response using OpenAI API (via native https)
+ * Get AI response using DeepSeek or OpenAI API
  */
-async function getOpenAIResponse(messages, context) {
-  if (!HAS_OPENAI) return getRuleBasedResponse(messages, context);
+async function getAIResponse(messages, context) {
+  if (!HAS_AI) return getRuleBasedResponse(messages, context);
 
   try {
     const https = require('https');
     const systemPrompt = buildSystemPrompt(context);
     const body = JSON.stringify({
-      model: AI_MODEL,
+      model: AI_CONFIG.model,
       messages: [
         { role: 'system', content: systemPrompt },
         ...messages.map((m) => ({ role: m.role, content: m.content })),
@@ -59,11 +63,11 @@ async function getOpenAIResponse(messages, context) {
 
     const response = await new Promise((resolve, reject) => {
       const req = https.request(
-        API_URL,
+        AI_CONFIG.url,
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${API_KEY}`,
+            'Authorization': `Bearer ${AI_CONFIG.key}`,
             'Content-Type': 'application/json',
           },
         },
@@ -86,7 +90,7 @@ async function getOpenAIResponse(messages, context) {
 
     return response.choices?.[0]?.message?.content?.trim() || getRuleBasedResponse(messages, context);
   } catch (error) {
-    console.error('OpenAI API error:', error.message);
+    console.error('AI API error:', error.message);
     return getRuleBasedResponse(messages, context);
   }
 }
@@ -658,7 +662,7 @@ function generateTitle(message) {
 }
 
 module.exports = {
-  getOpenAIResponse,
+  getAIResponse,
   getRuleBasedResponse,
   generateTitle,
 };
