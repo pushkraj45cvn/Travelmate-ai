@@ -8,7 +8,7 @@ const { sendEmail } = require('../config/nodemailer');
 // @route   POST /api/auth/register
 // @access  Public
 exports.register = asyncHandler(async (req, res, next) => {
-  const { name, email, password, plan } = req.body;
+  const { name, email, password } = req.body;
 
   // Check if user exists
   const existingUser = await User.findOne({ email });
@@ -16,21 +16,12 @@ exports.register = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('User already exists with this email', 400));
   }
 
-  // Determine plan
-  let userPlan = 'free';
-  let teamRole = null;
-  if (plan === 'pro' || plan === 'team') {
-    userPlan = plan;
-    teamRole = plan === 'team' ? 'owner' : null;
-  }
-
-  // Create user
+  // All new users start on the free plan
   const user = await User.create({
     name,
     email,
     password,
-    plan: userPlan,
-    teamRole,
+    plan: 'free',
   });
 
   // Generate verification token
