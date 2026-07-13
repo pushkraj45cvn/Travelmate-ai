@@ -65,21 +65,7 @@ const connectDB = async () => {
 /**
  * Test MongoDB connection status
  */
-const testConnection = async () => {
-  try {
 
-    if (mongoose.connection.readyState === 1) {
-      console.log("MongoDB test connection successful");
-      return true;
-    }
-
-    throw new Error("MongoDB is not connected");
-
-  } catch (error) {
-    console.error("MongoDB test failed:", error.message);
-    throw error;
-  }
-};
 
 
 module.exports = {
