@@ -87,7 +87,10 @@ exports.getDestination = asyncHandler(async (req, res, next) => {
 // @access  Private
 exports.getWishlist = asyncHandler(async (req, res, next) => {
   const wishlist = await Wishlist.findOne({ user: req.user.id })
-    .populate('destinations.destination');
+    .populate({
+      path: 'destinations.destination',
+      refPath: 'destinations.itemType',
+    });
 
   if (!wishlist) {
     return res.status(200).json({
@@ -96,9 +99,36 @@ exports.getWishlist = asyncHandler(async (req, res, next) => {
     });
   }
 
+  // Separate cities and destinations for frontend
+  const enhancedDestinations = wishlist.destinations.map((item) => {
+    const dest = item.destination;
+    if (!dest) return item;
+    // For cities, add country name if populated
+    if (item.itemType === 'City' && dest.country && typeof dest.country === 'object') {
+      return {
+        ...item.toObject(),
+        destination: {
+          ...dest.toObject(),
+          _type: 'City',
+          countryName: dest.country?.name || '',
+        },
+      };
+    }
+    return {
+      ...item.toObject(),
+      destination: {
+        ...dest.toObject(),
+        _type: item.itemType || 'Destination',
+      },
+    };
+  });
+
   res.status(200).json({
     success: true,
-    data: wishlist,
+    data: {
+      ...wishlist.toObject(),
+      destinations: enhancedDestinations,
+    },
   });
 });
 
@@ -106,7 +136,25 @@ exports.getWishlist = asyncHandler(async (req, res, next) => {
 // @route   POST /api/wishlist
 // @access  Private
 exports.addToWishlist = asyncHandler(async (req, res, next) => {
-  const { destinationId, notes, priority } = req.body;
+  const { destinationId, notes, priority, itemType } = req.body;
+
+  if (!destinationId) {
+    return next(new ErrorResponse('Please provide a destination ID', 400));
+  }
+
+  // Determine if this is a City or Destination
+  const type = itemType || 'Destination';
+
+  if (!['Destination', 'City'].includes(type)) {
+    return next(new ErrorResponse('Invalid item type', 400));
+  }
+
+  // Verify the item exists
+  const Model = type === 'City' ? require('../models/City') : require('../models/Destination');
+  const item = await Model.findById(destinationId);
+  if (!item) {
+    return next(new ErrorResponse(`${type} not found`, 404));
+  }
 
   let wishlist = await Wishlist.findOne({ user: req.user.id });
 
@@ -123,11 +171,12 @@ exports.addToWishlist = asyncHandler(async (req, res, next) => {
   );
 
   if (exists) {
-    return next(new ErrorResponse('Destination already in wishlist', 400));
+    return next(new ErrorResponse('Already in wishlist', 400));
   }
 
   wishlist.destinations.push({
     destination: destinationId,
+    itemType: type,
     notes: notes || '',
     priority: priority || 'medium',
   });

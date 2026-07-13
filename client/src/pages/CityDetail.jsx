@@ -69,7 +69,7 @@ const CityDetail = () => {
         setInWishlist(false);
         toast.success('Removed from wishlist');
       } else {
-        await api.post('/destinations/wishlist', { destinationId: slug });
+        await api.post('/destinations/wishlist', { destinationId: city._id, itemType: 'City' });
         setInWishlist(true);
         toast.success('Added to wishlist!');
       }

@@ -11,7 +11,12 @@ const wishlistSchema = new mongoose.Schema(
       {
         destination: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: 'Destination',
+          refPath: 'destinations.itemType',
+        },
+        itemType: {
+          type: String,
+          enum: ['Destination', 'City'],
+          default: 'Destination',
         },
         notes: {
           type: String,
