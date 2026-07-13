@@ -68,7 +68,4 @@ const connectDB = async () => {
 
 
 
-module.exports = {
-  connectDB,
-  testConnection
-};
+module.exports = connectDB;
