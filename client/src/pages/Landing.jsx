@@ -445,7 +445,11 @@ const Landing = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/auth/register?plan=${plan.name}`);
+                            if (plan.name === 'Free') {
+                              navigate('/auth/register');
+                            } else {
+                              navigate(`/payment/${plan.name.toLowerCase()}`);
+                            }
                           }}
                           className={`w-full py-3 rounded-xl font-medium transition-all duration-200 ${plan.btnStyle}`}
                         >

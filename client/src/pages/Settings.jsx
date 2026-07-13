@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiLock, FiEye, FiEyeOff, FiTrash2, FiStar, FiCheck } from 'react-icons/fi';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import authService from '../services/authService';
 import userService from '../services/userService';
 import { logout } from '../redux/slices/authSlice';
@@ -142,12 +142,12 @@ const Settings = () => {
                     </ul>
 
                     {!isCurrent && (
-                      <button
-                        onClick={() => toast.info('Payment integration coming soon!')}
-                        className={`w-full py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r ${plan.color} hover:opacity-90 transition-all`}
+                      <Link
+                        to={`/payment/${plan.id}`}
+                        className={`block w-full text-center py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r ${plan.color} hover:opacity-90 transition-all`}
                       >
                         {plan.id === 'free' ? 'Downgrade' : `Subscribe to ${plan.name}`}
-                      </button>
+                      </Link>
                     )}
                     {isCurrent && plan.id === 'free' && (
                       <p className="text-center text-xs text-dark-400">Free plan — upgrade anytime</p>

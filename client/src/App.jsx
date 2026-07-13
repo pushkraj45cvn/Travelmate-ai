@@ -34,6 +34,7 @@ const Profile = lazy(() => import('./pages/Profile'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const Invitations = lazy(() => import('./pages/Invitations'));
+const Payment = lazy(() => import('./pages/Payment'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
 const AdminTrips = lazy(() => import('./pages/admin/AdminTrips'));
@@ -98,6 +99,7 @@ const App = () => {
           <Route path="/settings" element={<Settings />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/invitations" element={<Invitations />} />
+          <Route path="/payment/:planId" element={<Payment />} />
         </Route>
 
         {/* Admin Routes */}
