@@ -52,6 +52,7 @@ const destinationRoutes = require('./routes/destinations');
 const dashboardRoutes = require('./routes/dashboard');
 const adminRoutes = require('./routes/admin');
 const aiRoutes = require('./routes/ai');
+const subscriptionRoutes = require('./routes/subscriptions');
 
 // Initialize express
 const app = express();
@@ -149,6 +150,7 @@ app.use('/api/destinations', destinationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 
 // Serve frontend build for client-side routes
 const clientBuildPath = path.join(__dirname, '..', 'client', 'dist');

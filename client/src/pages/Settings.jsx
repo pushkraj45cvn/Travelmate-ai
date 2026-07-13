@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import authService from '../services/authService';
 import userService from '../services/userService';
-import { logout } from '../redux/slices/authSlice';
+import { logout, setUser } from '../redux/slices/authSlice';
 import { useTheme } from '../contexts/ThemeContext';
 import { toast } from 'react-toastify';
 
@@ -141,19 +141,59 @@ const Settings = () => {
                       ))}
                     </ul>
 
-                    {!isCurrent && (
+                    {!isCurrent && plan.id !== 'free' && (
                       <Link
                         to={`/payment/${plan.id}`}
                         className={`block w-full text-center py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r ${plan.color} hover:opacity-90 transition-all`}
                       >
-                        {plan.id === 'free' ? 'Downgrade' : `Subscribe to ${plan.name}`}
+                        Subscribe to {plan.name}
                       </Link>
+                    )}
+                    {!isCurrent && plan.id === 'free' && (
+                      <button
+                        onClick={async () => {
+                          if (!window.confirm('Are you sure you want to downgrade to the Free plan? You will lose access to premium features.')) return;
+                          try {
+                            const { default: paymentService } = await import('../services/paymentService');
+                            await paymentService.cancelSubscription();
+                            const updatedUser = { ...user, plan: 'free' };
+                            dispatch(setUser(updatedUser));
+                            localStorage.setItem('user', JSON.stringify(updatedUser));
+                            toast.success('Downgraded to Free plan');
+                          } catch (err) {
+                            toast.error(err.response?.data?.error || 'Failed to downgrade');
+                          }
+                        }}
+                        className={`block w-full text-center py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r ${plan.color} hover:opacity-90 transition-all`}
+                      >
+                        Downgrade to Free
+                      </button>
                     )}
                     {isCurrent && plan.id === 'free' && (
                       <p className="text-center text-xs text-dark-400">Free plan — upgrade anytime</p>
                     )}
                     {isCurrent && plan.id !== 'free' && (
-                      <p className="text-center text-xs text-green-600 dark:text-green-400">Active plan</p>
+                      <div className="text-center">
+                        <p className="text-xs text-green-600 dark:text-green-400 mb-2">Active plan</p>
+                        <button
+                          onClick={async () => {
+                            if (!window.confirm('Are you sure you want to cancel your subscription? You will be downgraded to the Free plan.')) return;
+                            try {
+                              const { default: paymentService } = await import('../services/paymentService');
+                              await paymentService.cancelSubscription();
+                              const updatedUser = { ...user, plan: 'free' };
+                              dispatch(setUser(updatedUser));
+                              localStorage.setItem('user', JSON.stringify(updatedUser));
+                              toast.success('Subscription cancelled');
+                            } catch (err) {
+                              toast.error(err.response?.data?.error || 'Failed to cancel subscription');
+                            }
+                          }}
+                          className="text-xs text-red-500 hover:text-red-600 dark:text-red-400 underline"
+                        >
+                          Cancel subscription
+                        </button>
+                      </div>
                     )}
                   </div>
                 );
