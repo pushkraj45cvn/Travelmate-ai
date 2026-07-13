@@ -159,8 +159,14 @@ const startServer = async () => {
     // await seedDevUsers();
 
     // Test SMTP connection asynchronously — don't block server start
-    const { testConnection } = require('./config/nodemailer');
-    testConnection().catch(() => {});
+    try {
+      const nodemailer = require('./config/nodemailer');
+      if (typeof nodemailer.testConnection === 'function') {
+        nodemailer.testConnection().catch(() => {});
+      }
+    } catch (_) {
+      // SMTP testing is optional — ignore any errors
+    }
 
     server.listen(PORT, () => {
       console.log(`TravelMate AI Server running on port ${PORT}`.yellow.bold);

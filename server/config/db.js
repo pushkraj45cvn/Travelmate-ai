@@ -15,10 +15,10 @@ const connectDB = async () => {
     return conn;
 
   } catch (error) {
-    console.error("=== MongoDB Connection Error ===");
-    console.error(error.message);
-    throw error;
-  }
+  console.error("\n=== FAILED TO START SERVER ===");
+  console.error(error);
+  process.exit(1);
+}
 };
 
 module.exports = connectDB;
