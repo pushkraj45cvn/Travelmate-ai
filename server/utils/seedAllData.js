@@ -1,0 +1,1688 @@
+const mongoose = require('mongoose');
+const Country = require('../models/Country');
+const City = require('../models/City');
+const Destination = require('../models/Destination');
+
+const MONGO_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/travelmate-ai';
+
+const countries = [
+  // ========== FREE COUNTRIES ==========
+  {
+    name: 'France', continent: 'Europe', flag: '🇫🇷', code: 'FR',
+    currency: { code: 'EUR', symbol: '€', name: 'Euro' },
+    languages: ['French'], capital: 'Paris',
+    description: 'A timeless destination where art, cuisine, and romance converge. From the glittering boulevards of Paris to the lavender fields of Provence and the glamorous Riviera, France offers an unparalleled cultural journey through world-class museums, Michelin-starred dining, medieval villages, and sun-drenched vineyards.',
+    bestTimeToVisit: 'April-June & September-October', isPopular: true, isPremium: false,
+    timezone: 'CET', drivingSide: 'right',
+    visaInfo: 'Schengen visa required for many countries. EU citizens can enter freely.',
+    healthInfo: 'Excellent healthcare system. EHIC cards accepted for EU visitors.',
+    safetyInfo: 'Generally safe. Watch for pickpockets in tourist areas and on public transport.',
+    coordinates: { lat: 46.6034, lng: 1.8883 },
+    travelTips: ['Learn a few basic French phrases - locals appreciate the effort', 'Book museum tickets online to skip long queues', 'Try local bakeries for fresh croissants and baguettes', 'The train system (TGV/SNCF) is efficient for intercity travel'],
+    funFact: 'France is the most visited country in the world, welcoming over 89 million tourists annually.',
+  },
+  {
+    name: 'Japan', continent: 'Asia', flag: '🇯🇵', code: 'JP',
+    currency: { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+    languages: ['Japanese'], capital: 'Tokyo',
+    description: 'A captivating blend of ancient tradition and cutting-edge innovation. Japan enchants visitors with serene Zen temples, vibrant neon-lit cities, pristine natural landscapes, and a culinary scene that ranges from Michelin-starred sushi counters to bustling ramen shops. Experience the land of the rising sun through its harmonious contrasts.',
+    bestTimeToVisit: 'March-May & October-November', isPopular: true, isPremium: false,
+    timezone: 'JST', drivingSide: 'left',
+    visaInfo: 'Visa-free entry for many countries for up to 90 days.',
+    healthInfo: 'Excellent healthcare. Travel insurance strongly recommended.',
+    safetyInfo: 'Extremely safe. One of the safest countries in the world with very low crime rates.',
+    coordinates: { lat: 36.2048, lng: 138.2529 },
+    travelTips: ['Get a Suica or Pasmo IC card for seamless train travel', 'Learn basic Japanese etiquette - bowing, removing shoes', 'Try convenience store food (konbini) - it\'s surprisingly excellent', 'Visit during cherry blossom season (late March-early April)'],
+    funFact: 'Japan has over 6,800 islands, though only about 430 are inhabited.',
+  },
+  {
+    name: 'Italy', continent: 'Europe', flag: '🇮🇹', code: 'IT',
+    currency: { code: 'EUR', symbol: '€', name: 'Euro' },
+    languages: ['Italian'], capital: 'Rome',
+    description: 'La Dolce Vita awaits in Italy, a country that celebrates life through extraordinary food, breathtaking art, and timeless architecture. Wander through ancient Roman ruins, Renaissance masterpieces, charming hilltop villages, and stunning coastal towns. Every region offers its own culinary traditions and breathtaking landscapes.',
+    bestTimeToVisit: 'April-June & September-October', isPopular: true, isPremium: false,
+    timezone: 'CET', drivingSide: 'right',
+    visaInfo: 'Schengen visa required for non-EU visitors.',
+    healthInfo: 'Good healthcare system. EU visitors can use EHIC.',
+    safetyInfo: 'Generally safe. Be vigilant against pickpockets in crowded tourist spots.',
+    coordinates: { lat: 41.8719, lng: 12.5674 },
+    travelTips: ['Book major attractions like Colosseum and Vatican months ahead', 'Eat where the locals eat - avoid restaurants with picture menus', 'Learn to make authentic pasta in a cooking class', 'Visit small towns - they often have the best food and charm'],
+    funFact: 'Italy has the most UNESCO World Heritage Sites of any country in the world.',
+  },
+  {
+    name: 'Thailand', continent: 'Asia', flag: '🇹🇭', code: 'TH',
+    currency: { code: 'THB', symbol: '฿', name: 'Thai Baht' },
+    languages: ['Thai'], capital: 'Bangkok',
+    description: 'The Land of Smiles captivates with its golden temples, floating markets, tropical beaches, and legendary street food. Thailand offers an intoxicating mix of vibrant cities, lush jungles, ancient ruins, and idyllic islands where turquoise waters lap palm-fringed shores.',
+    bestTimeToVisit: 'November-February', isPopular: true, isPremium: false,
+    timezone: 'ICT', drivingSide: 'left',
+    visaInfo: 'Visa-free or visa-on-arrival for many countries.',
+    healthInfo: 'International hospitals in major cities are excellent. Stay hydrated.',
+    safetyInfo: 'Very safe for tourists. Beware of scammers in tourist-heavy areas.',
+    coordinates: { lat: 15.8700, lng: 100.9925 },
+    travelTips: ['Always negotiate prices at markets and tuk-tuks', 'Respect Buddhist temples - cover shoulders and knees', 'Try street food from busy stalls for the freshest meals', 'Visit the northern region for incredible mountain scenery'],
+    funFact: 'Thailand has over 1,400 islands, but only about 200 are inhabited.',
+  },
+  {
+    name: 'United Kingdom', continent: 'Europe', flag: '🇬🇧', code: 'GB',
+    currency: { code: 'GBP', symbol: '£', name: 'British Pound' },
+    languages: ['English'], capital: 'London',
+    description: 'A realm of royal pageantry, rolling green countryside, and rich industrial heritage. From London\'s iconic landmarks and world-class museums to the mystical highlands of Scotland and Wales\' dramatic coastlines, the UK offers a perfect blend of history, culture, and natural beauty.',
+    bestTimeToVisit: 'May-September', isPopular: true, isPremium: false,
+    timezone: 'GMT', drivingSide: 'left',
+    visaInfo: 'Visa requirements vary. ETA system for some nationalities.',
+    healthInfo: 'NHS provides free emergency care for visitors from certain countries.',
+    safetyInfo: 'Generally safe. Exercise normal precautions in cities at night.',
+    coordinates: { lat: 55.3781, lng: -3.4360 },
+    travelTips: ['Get an Oyster card for London\'s public transport', 'Book theatre tickets in advance for best prices', 'Visit pub gardens in summer for the classic British experience', 'Carry an umbrella - weather changes frequently'],
+    funFact: 'The UK has over 7,000 islands, but only about 200 are inhabited.',
+  },
+  {
+    name: 'United States', continent: 'North America', flag: '🇺🇸', code: 'US',
+    currency: { code: 'USD', symbol: '$', name: 'US Dollar' },
+    languages: ['English'], capital: 'Washington D.C.',
+    description: 'A vast tapestry of landscapes and cultures, the United States offers everything from neon-lit metropolises and sun-kissed beaches to rugged national parks and deep south hospitality. Experience the iconic American road trip, diverse culinary scenes, and world-class entertainment.',
+    bestTimeToVisit: 'May-October (varies by region)', isPopular: true, isPremium: false,
+    timezone: 'Multiple', drivingSide: 'right',
+    visaInfo: 'ESTA or visa required for most international visitors.',
+    healthInfo: 'Healthcare is expensive. Comprehensive travel insurance is essential.',
+    safetyInfo: 'Generally safe for tourists. Be aware of your surroundings in major cities.',
+    coordinates: { lat: 39.8283, lng: -98.5795 },
+    travelTips: ['Tipping is customary - 15-20% at restaurants', 'Rent a car for exploring outside major cities', 'National Parks are worth the entrance fee', 'American portion sizes are large - sharing is common'],
+    funFact: 'The US has 63 national parks spanning over 52 million acres of protected land.',
+  },
+  {
+    name: 'Australia', continent: 'Oceania', flag: '🇦🇺', code: 'AU',
+    currency: { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+    languages: ['English'], capital: 'Canberra',
+    description: 'A land of staggering natural beauty where ancient Indigenous culture meets modern coastal living. Australia dazzles with its golden beaches, vast Outback, unique wildlife, and vibrant cities. From the Great Barrier Reef to the Sydney Opera House, adventure awaits at every turn.',
+    bestTimeToVisit: 'October-April', isPopular: true, isPremium: false,
+    timezone: 'Multiple', drivingSide: 'left',
+    visaInfo: 'ETA or eVisitor visa available for many countries.',
+    healthInfo: 'Excellent healthcare. Sun protection is absolutely critical.',
+    safetyInfo: 'Very safe. Beware of sun exposure and ocean rips at beaches.',
+    coordinates: { lat: -25.2744, lng: 133.7751 },
+    travelTips: ['Always slip-slop-slap - Sunscreen, Hat, and UV protection', 'Swim between the red and yellow flags on beaches', 'Respect Indigenous cultural sites and stories', 'The Outback requires careful planning and plenty of water'],
+    funFact: 'Australia is the only continent that is also a single country.',
+  },
+  {
+    name: 'Spain', continent: 'Europe', flag: '🇪🇸', code: 'ES',
+    currency: { code: 'EUR', symbol: '€', name: 'Euro' },
+    languages: ['Spanish', 'Catalan', 'Basque'], capital: 'Madrid',
+    description: 'A passionate country where flamenco rhythms, sun-drenched beaches, and architectural wonders create an irresistible allure. Spain entices with its vibrant festivals, tapas culture, Moorish palaces, and a lifestyle that celebrates the joy of living. From Andalusia\'s white villages to Catalonia\'s avant-garde art.',
+    bestTimeToVisit: 'April-June & September-October', isPopular: true, isPremium: false,
+    timezone: 'CET', drivingSide: 'right',
+    visaInfo: 'Schengen visa required for non-EU visitors.',
+    healthInfo: 'Good healthcare system. EU visitors can use EHIC.',
+    safetyInfo: 'Generally safe. Watch for pickpockets in tourist areas, especially Barcelona.',
+    coordinates: { lat: 40.4637, lng: -3.7492 },
+    travelTips: ['Eat dinner late - restaurants open around 8:30 PM at the earliest', 'Learn to enjoy siesta time when shops close mid-afternoon', 'Try regional specialties - paella in Valencia, pintxos in Basque Country', 'Book popular attractions like Alhambra weeks in advance'],
+    funFact: 'Spain has the second-highest number of UNESCO World Heritage Sites, after Italy.',
+  },
+  {
+    name: 'India', continent: 'Asia', flag: '🇮🇳', code: 'IN',
+    currency: { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+    languages: ['Hindi', 'English', 'Regional languages'], capital: 'New Delhi',
+    description: 'A kaleidoscope of colors, flavors, and spirituality, India overwhelms the senses in the most beautiful way. From the majestic Taj Mahal and bustling bazaars to serene backwaters and Himalayan peaks, this ancient civilization offers a transformative journey through millennia of culture, cuisine, and tradition.',
+    bestTimeToVisit: 'October-March', isPopular: true, isPremium: false,
+    timezone: 'IST', drivingSide: 'left',
+    visaInfo: 'e-Visa available for many countries. Apply online before travel.',
+    healthInfo: 'Drink only bottled water. Vaccinations recommended for certain regions.',
+    safetyInfo: 'Generally safe for tourists. Female travelers should exercise extra caution.',
+    coordinates: { lat: 20.5937, lng: 78.9629 },
+    travelTips: ['Drink only bottled or filtered water', ' negotiate politely at markets - it\'s expected', 'Try regional cuisines - each state has unique flavors', 'Respect religious customs - remove shoes at temples'],
+    funFact: 'India has 22 official languages and over 1,600 spoken dialects.',
+  },
+  {
+    name: 'United Arab Emirates', continent: 'Asia', flag: '🇦🇪', code: 'AE',
+    currency: { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
+    languages: ['Arabic', 'English'], capital: 'Abu Dhabi',
+    description: 'A futuristic oasis where architectural marvels rise from the desert. The UAE dazzles with the world\'s tallest building, man-made islands shaped like palm trees, sprawling shopping malls with indoor skiing, and a rapidly evolving arts and culture scene. Experience Arabian hospitality blended with ultra-modern luxury.',
+    bestTimeToVisit: 'November-March', isPopular: true, isPremium: false,
+    timezone: 'GST', drivingSide: 'right',
+    visaInfo: 'Visa-free or visa-on-arrival for many nationalities.',
+    healthInfo: 'World-class healthcare facilities. Summer heat can be extreme.',
+    safetyInfo: 'Extremely safe - one of the safest countries in the world.',
+    coordinates: { lat: 23.4241, lng: 53.8478 },
+    travelTips: ['Dress modestly in public areas and malls', 'Avoid visiting during summer (June-September) - extreme heat', 'Friday is the holy day - many places open after noon', 'Respect Ramadan rules during the holy month'],
+    funFact: 'Dubai\'s Burj Khalifa is so tall that you can see the sunset from the top twice on the same day.',
+  },
+
+  // ========== PREMIUM COUNTRIES ==========
+  {
+    name: 'Switzerland', continent: 'Europe', flag: '🇨🇭', code: 'CH',
+    currency: { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc' },
+    languages: ['German', 'French', 'Italian', 'Romansh'], capital: 'Bern',
+    description: 'A pristine alpine paradise where snow-capped peaks, crystalline lakes, and charming mountain villages create postcard-perfect scenery. Switzerland offers world-class skiing, scenic train journeys through valleys, exquisite chocolate and cheese, and cities that blend medieval charm with modern sophistication.',
+    bestTimeToVisit: 'December-March (ski) / June-September (hiking)', isPopular: true, isPremium: true,
+    timezone: 'CET', drivingSide: 'right',
+    visaInfo: 'Schengen visa required. Part of Schengen Area.',
+    healthInfo: 'Excellent healthcare. Very high medical standards.',
+    safetyInfo: 'Extremely safe. Very low crime rates throughout the country.',
+    coordinates: { lat: 46.8182, lng: 8.2275 },
+    travelTips: ['Get a Swiss Travel Pass for unlimited train travel', 'Pack layers - weather changes quickly in the mountains', 'Try fondue and raclette - iconic Swiss dishes', 'Swiss chocolate is world-famous - visit a chocolaterie'],
+    funFact: 'Switzerland has over 7,000 lakes, including Lake Geneva, the largest alpine lake in Europe.',
+  },
+  {
+    name: 'Greece', continent: 'Europe', flag: '🇬🇷', code: 'GR',
+    currency: { code: 'EUR', symbol: '€', name: 'Euro' },
+    languages: ['Greek'], capital: 'Athens',
+    description: 'The cradle of Western civilization, where ancient ruins meet sun-drenched islands with whitewashed villages and azure seas. Greece offers an intoxicating blend of history, mythology, stunning beaches, and Mediterranean cuisine that celebrates fresh ingredients and timeless recipes.',
+    bestTimeToVisit: 'May-October', isPopular: true, isPremium: true,
+    timezone: 'EET', drivingSide: 'right',
+    visaInfo: 'Schengen visa required. Part of Schengen Area.',
+    healthInfo: 'Adequate healthcare. EU visitors can use EHIC.',
+    safetyInfo: 'Very safe. Watch for pickpockets in crowded tourist areas.',
+    coordinates: { lat: 39.0742, lng: 21.8243 },
+    travelTips: ['Visit the Acropolis early morning to avoid crowds and heat', 'Take ferry between islands for stunning sea views', 'Try authentic Greek salad and fresh seafood by the coast', 'Respect monastery dress codes - cover shoulders and knees'],
+    funFact: 'Greece has over 6,000 islands, but only about 227 are inhabited.',
+  },
+  {
+    name: 'Maldives', continent: 'Asia', flag: '🇲🇻', code: 'MV',
+    currency: { code: 'MVR', symbol: 'Rf', name: 'Maldivian Rufiyaa' },
+    languages: ['Dhivehi', 'English'], capital: 'Male',
+    description: 'A tropical paradise of unparalleled beauty, where overwater bungalows stretch across crystal-clear lagoons and vibrant coral reefs teem with marine life. The Maldives is the ultimate escape for romance, relaxation, and underwater adventures in some of the most pristine waters on Earth.',
+    bestTimeToVisit: 'November-April', isPopular: true, isPremium: true,
+    timezone: 'MVT', drivingSide: 'left',
+    visaInfo: 'Free 30-day visa on arrival for all nationalities.',
+    healthInfo: 'Adequate healthcare on main islands. Travel insurance essential.',
+    safetyInfo: 'Very safe. Strict laws regarding alcohol and public behavior.',
+    coordinates: { lat: 3.2028, lng: 73.2207 },
+    travelTips: ['Choose all-inclusive resorts for best value', 'Pack reef-safe sunscreen to protect the coral', 'US Dollars are widely accepted alongside local currency', 'Friday is a holiday - many services are limited'],
+    funFact: 'The Maldives is the flattest country on Earth, with an average elevation of just 1.5 meters above sea level.',
+  },
+  {
+    name: 'Iceland', continent: 'Europe', flag: '🇮🇸', code: 'IS',
+    currency: { code: 'ISK', symbol: 'kr', name: 'Icelandic Króna' },
+    languages: ['Icelandic', 'English'], capital: 'Reykjavik',
+    description: 'A land of fire and ice where volcanoes, glaciers, geothermal hot springs, and thundering waterfalls create an otherworldly landscape. Iceland offers extraordinary natural phenomena from the Northern Lights in winter to the Midnight Sun in summer, all wrapped in a unique Nordic culture.',
+    bestTimeToVisit: 'June-August (summer) / September-March (Aurora)', isPopular: true, isPremium: true,
+    timezone: 'GMT', drivingSide: 'right',
+    visaInfo: 'Schengen visa required. Part of Schengen Area.',
+    healthInfo: 'Excellent healthcare. Tap water is pure and drinkable.',
+    safetyInfo: 'Extremely safe. Very low crime rate.',
+    coordinates: { lat: 64.9631, lng: -19.0208 },
+    travelTips: ['Rent a 4x4 for exploring the rugged highlands', 'Pack thermal layers and waterproof clothing', 'Book Blue Lagoon and popular attractions well in advance', 'Never hike on glaciers without a licensed guide'],
+    funFact: 'Iceland has no standing army, navy, or air force - it\'s one of the most peaceful countries on Earth.',
+  },
+  {
+    name: 'New Zealand', continent: 'Oceania', flag: '🇳🇿', code: 'NZ',
+    currency: { code: 'NZD', symbol: 'NZ$', name: 'New Zealand Dollar' },
+    languages: ['English', 'Māori'], capital: 'Wellington',
+    description: 'Middle-earth brought to life, New Zealand offers jaw-dropping landscapes from pristine fjords and snow-capped mountains to geothermal wonders and golden beaches. Adventure capital of the world, home to bungee jumping, jet boating, and a rich Māori heritage that adds depth to every experience.',
+    bestTimeToVisit: 'December-February (summer) / June-August (ski)', isPopular: true, isPremium: true,
+    timezone: 'NZST', drivingSide: 'left',
+    visaInfo: 'NZeTA required for visa-waiver countries.',
+    healthInfo: 'Excellent healthcare. ACC provides accident coverage for visitors.',
+    safetyInfo: 'Very safe. Low crime rate. Natural hazards require caution.',
+    coordinates: { lat: -40.9006, lng: 174.8860 },
+    travelTips: ['Rent a campervan for the ultimate road trip experience', 'Allow at least 3 weeks to see both islands properly', 'Respect Māori cultural sites and protocols', 'Sandflies can be annoying - bring insect repellent'],
+    funFact: 'New Zealand was the last major landmass to be settled by humans, around 1300 AD.',
+  },
+  {
+    name: 'Peru', continent: 'South America', flag: '🇵🇪', code: 'PE',
+    currency: { code: 'PEN', symbol: 'S/', name: 'Peruvian Sol' },
+    languages: ['Spanish', 'Quechua'], capital: 'Lima',
+    description: 'A land of ancient mysteries and breathtaking natural diversity. Peru is home to the iconic Lost City of Machu Picchu, the vast Amazon rainforest, the floating islands of Lake Titicaca, and a culinary scene considered among the world\'s best. Every corner reveals a new wonder.',
+    bestTimeToVisit: 'May-September', isPopular: true, isPremium: true,
+    timezone: 'PET', drivingSide: 'right',
+    visaInfo: 'Visa-free entry for many countries for up to 183 days.',
+    healthInfo: 'Altitude sickness is common in Cusco. Drink coca tea and acclimatize gradually.',
+    safetyInfo: 'Generally safe. Exercise caution in cities and use registered taxis.',
+    coordinates: { lat: -9.1900, lng: -75.0152 },
+    travelTips: ['Book Machu Picchu tickets months in advance - they sell out quickly', 'Acclimatize to altitude in Cusco for 1-2 days before hiking', 'Try ceviche in Lima - it\'s Peru\'s signature dish', 'Pack for all seasons - weather varies dramatically by region'],
+    funFact: 'Peru has 90 different microclimates, making it one of the most ecologically diverse countries on Earth.',
+  },
+  {
+    name: 'South Africa', continent: 'Africa', flag: '🇿🇦', code: 'ZA',
+    currency: { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+    languages: ['Afrikaans', 'English', 'Zulu', 'Xhosa'], capital: 'Pretoria',
+    description: 'A rainbow nation of extraordinary diversity, where dramatic coastlines meet vast savannas teeming with wildlife. South Africa offers unforgettable safaris, world-class wine regions, vibrant cities, and a complex history that makes every visit both enriching and transformative.',
+    bestTimeToVisit: 'May-September (safari) / November-March (beach)', isPopular: true, isPremium: true,
+    timezone: 'SAST', drivingSide: 'left',
+    visaInfo: 'Visa-free for many countries up to 90 days.',
+    healthInfo: 'Malaria precautions needed for Kruger area. Good medical facilities in cities.',
+    safetyInfo: 'Exercise caution in cities. Stick to well-known areas and avoid walking alone at night.',
+    coordinates: { lat: -30.5595, lng: 22.9375 },
+    travelTips: ['Book safari lodges well in advance for best rates', 'Try a braai (barbecue) - it\'s a national institution', 'Visit a township for authentic cultural experiences', 'The Garden Route drive is one of the world\'s most scenic road trips'],
+    funFact: 'South Africa has three capital cities: Pretoria (administrative), Cape Town (legislative), and Bloemfontein (judicial).',
+  },
+  {
+    name: 'Canada', continent: 'North America', flag: '🇨🇦', code: 'CA',
+    currency: { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
+    languages: ['English', 'French'], capital: 'Ottawa',
+    description: 'A vast wilderness of towering mountains, pristine lakes, and vibrant multicultural cities. Canada offers world-class skiing in the Rockies, stunning coastal scenery in British Columbia, the charm of old Quebec, and the spectacular Northern Lights dancing across Arctic skies.',
+    bestTimeToVisit: 'June-September & December-March', isPopular: true, isPremium: true,
+    timezone: 'Multiple', drivingSide: 'right',
+    visaInfo: 'eTA required for visa-waiver countries.',
+    healthInfo: 'Excellent healthcare. Travel insurance recommended.',
+    safetyInfo: 'Very safe. One of the safest countries in the world.',
+    coordinates: { lat: 56.1304, lng: -106.3468 },
+    travelTips: ['Visit Banff and Lake Louise at sunrise to avoid crowds', 'Learn to say "eh" and apologize - it\'s Canadian culture', 'Try poutine - Canada\'s iconic comfort food', 'Bundle up in winter - temperatures can drop below -30°C'],
+    funFact: 'Canada has the longest coastline of any country in the world, stretching over 202,080 kilometers.',
+  },
+  {
+    name: 'Brazil', continent: 'South America', flag: '🇧🇷', code: 'BR',
+    currency: { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
+    languages: ['Portuguese'], capital: 'Brasília',
+    description: 'A vibrant carnival of life, where samba rhythms, tropical beaches, and the Amazon rainforest create an unforgettable symphony. Brazil pulsates with energy from the iconic Christ the Redeemer statue to the thundering Iguaçu Falls and the enchanting wetlands of the Pantanal.',
+    bestTimeToVisit: 'December-March', isPopular: true, isPremium: true,
+    timezone: 'Multiple', drivingSide: 'right',
+    visaInfo: 'Visa requirements vary. e-Visa available for many countries.',
+    healthInfo: 'Yellow fever vaccination recommended. Dengue precautions in tropical areas.',
+    safetyInfo: 'Exercise caution in major cities. Avoid favelas and walking alone at night.',
+    coordinates: { lat: -14.2350, lng: -51.9253 },
+    travelTips: ['Learn basic Portuguese - English is not widely spoken', 'Try açaí bowls from street vendors - they\'re authentic and delicious', 'Book Carnival tickets and accommodation months in advance', 'Use registered taxis or ride-sharing apps for safety'],
+    funFact: 'Brazil is home to the largest portion of the Amazon rainforest, covering about 60% of it.',
+  },
+  {
+    name: 'Egypt', continent: 'Africa', flag: '🇪🇬', code: 'EG',
+    currency: { code: 'EGP', symbol: 'E£', name: 'Egyptian Pound' },
+    languages: ['Arabic'], capital: 'Cairo',
+    description: 'The cradle of civilization, where the mighty Nile River flows past ancient pyramids, magnificent temples, and tombs filled with treasures. Egypt offers an unparalleled journey through 5,000 years of history, from the Great Sphinx to the Valley of the Kings, alongside vibrant bazaars and Red Sea coral reefs.',
+    bestTimeToVisit: 'October-April', isPopular: true, isPremium: true,
+    timezone: 'EET', drivingSide: 'right',
+    visaInfo: 'Visa on arrival or e-Visa available for most nationalities.',
+    healthInfo: 'Drink only bottled water. Stomach upsets are common - pack medications.',
+    safetyInfo: 'Tourist areas are heavily secured. Avoid political demonstrations.',
+    coordinates: { lat: 26.8206, lng: 30.8025 },
+    travelTips: ['Hire a licensed Egyptologist guide for deeper historical insights', 'Negotiate prices firmly at Khan El Khalili market', 'Visit the Pyramids early morning to beat crowds and heat', 'Take a Nile cruise between Luxor and Aswan for incredible temples'],
+    funFact: 'The Great Pyramid of Giza was the tallest man-made structure in the world for over 3,800 years.',
+  },
+];
+
+const citiesByCountry = {
+  France: [
+    {
+      name: 'Paris', isCapital: true, isPopular: true, isPremium: false,
+      description: 'The City of Light beckons with romantic ambiance, world-class art at the Louvre, iconic landmarks like the Eiffel Tower, and exquisite cuisine in charming sidewalk cafés.',
+      coordinates: { lat: 48.8566, lng: 2.3522 },
+      estimatedBudget: { min: 1500, max: 5000, currency: 'EUR' },
+      bestTimeToVisit: 'April-June & September-October',
+      attractions: [
+        { name: 'Eiffel Tower', description: 'Iconic iron lattice tower and global symbol of France', rating: 4.7, category: 'landmark' },
+        { name: 'Louvre Museum', description: "World's largest art museum housing the Mona Lisa", rating: 4.8, category: 'museum' },
+        { name: 'Notre-Dame Cathedral', description: 'Medieval Gothic cathedral on the Île de la Cité', rating: 4.7, category: 'landmark' },
+        { name: 'Sacré-Cœur Basilica', description: 'Stunning white basilica atop Montmartre hill', rating: 4.6, category: 'landmark' },
+        { name: 'Luxembourg Gardens', description: 'Beautiful formal gardens with fountains and statues', rating: 4.5, category: 'nature' },
+      ],
+      restaurants: [
+        { name: 'Le Cinq', cuisine: 'French', priceRange: '$$$$', rating: 4.9 },
+        { name: 'L\'Ambroisie', cuisine: 'French', priceRange: '$$$$', rating: 4.8 },
+        { name: 'Breizh Café', cuisine: 'Creperie', priceRange: '$$', rating: 4.5 },
+      ],
+      hotels: [
+        { name: 'Hôtel Plaza Athénée', type: 'luxury', pricePerNight: 850, rating: 4.8, amenities: ['Spa', 'Michelin Restaurant', 'Eiffel Tower View'] },
+        { name: 'Hôtel Le Marais', type: 'mid-range', pricePerNight: 280, rating: 4.4, amenities: ['Free WiFi', 'Breakfast', 'Bike Rental'] },
+        { name: 'Ibis Paris Centre', type: 'budget', pricePerNight: 110, rating: 4.0, amenities: ['Free WiFi', '24hr Reception'] },
+      ],
+      travelTips: ['Book museum tickets online to avoid long queues', 'Use the Metro - it\'s the most efficient way to get around', 'Visit popular attractions early morning or late evening'],
+      weather: { temperature: '12°C avg', condition: 'Temperate', humidity: '75%' },
+      funFact: 'Paris has only one stop sign in the entire city.',
+    },
+    {
+      name: 'Nice', isCapital: false, isPopular: true, isPremium: false,
+      description: 'The jewel of the French Riviera, where the deep blue Mediterranean meets pastel-colored buildings, vibrant markets, and a timeless Promenade des Anglais.',
+      coordinates: { lat: 43.7102, lng: 7.2620 },
+      estimatedBudget: { min: 1200, max: 4000, currency: 'EUR' },
+      bestTimeToVisit: 'May-September',
+      attractions: [
+        { name: 'Promenade des Anglais', description: 'Iconic seaside promenade stretching along the Baie des Anges', rating: 4.7, category: 'landmark' },
+        { name: 'Castle Hill', description: 'Historic hilltop park with panoramic city views', rating: 4.6, category: 'nature' },
+        { name: 'Cours Saleya Market', description: 'Famous flower and food market in Old Town', rating: 4.5, category: 'shopping' },
+      ],
+      restaurants: [
+        { name: 'Le Chantecler', cuisine: 'French', priceRange: '$$$$', rating: 4.7 },
+        { name: 'La Merenda', cuisine: 'Niçoise', priceRange: '$$', rating: 4.6 },
+      ],
+      hotels: [
+        { name: 'Negresco', type: 'luxury', pricePerNight: 500, rating: 4.7, amenities: ['Spa', 'Beach Access', 'Fine Dining'] },
+        { name: 'Hotel Beau Rivage', type: 'mid-range', pricePerNight: 180, rating: 4.3, amenities: ['Sea View', 'Restaurant'] },
+      ],
+      travelTips: ['Visit the Cours Saleya market in the morning', 'Take the train along the coast to explore nearby villages'],
+      weather: { temperature: '16°C avg', condition: 'Mediterranean', humidity: '72%' },
+    },
+    {
+      name: 'Lyon', isCapital: false, isPopular: false, isPremium: false,
+      description: "France's gastronomic capital, where renaissance architecture meets world-renowned cuisine in a city that bridges the Rhône and Saône rivers.",
+      coordinates: { lat: 45.7640, lng: 4.8357 },
+      estimatedBudget: { min: 1000, max: 3500, currency: 'EUR' },
+      bestTimeToVisit: 'April-October',
+      attractions: [
+        { name: 'Vieux Lyon', description: 'Well-preserved Renaissance quarter with traboules', rating: 4.6, category: 'landmark' },
+        { name: 'Basilica of Notre-Dame de Fourvière', description: 'Stunning basilica with panoramic city views', rating: 4.5, category: 'landmark' },
+        { name: 'Parc de la Tête d\'Or', description: 'Large urban park with lake and botanical garden', rating: 4.4, category: 'nature' },
+      ],
+      restaurants: [
+        { name: 'Paul Bocuse', cuisine: 'French', priceRange: '$$$$', rating: 4.8 },
+        { name: 'Le Musée', cuisine: 'Lyonnaise', priceRange: '$$', rating: 4.5 },
+      ],
+      hotels: [
+        { name: 'Villa Maïa', type: 'luxury', pricePerNight: 350, rating: 4.6, amenities: ['Spa', 'Pool', 'Restaurant'] },
+        { name: 'Hotel Carlton Lyon', type: 'mid-range', pricePerNight: 150, rating: 4.3, amenities: ['Free WiFi', 'Gym'] },
+      ],
+      travelTips: ['Try authentic Lyonnaise bouchons for traditional cuisine', 'Take the funicular to Fourvière hill'],
+      weather: { temperature: '13°C avg', condition: 'Continental', humidity: '73%' },
+    },
+  ],
+  Japan: [
+    {
+      name: 'Tokyo', isCapital: true, isPopular: true, isPremium: false,
+      description: 'A dazzling metropolis where cutting-edge technology meets ancient temples, neon-lit streets lead to serene gardens, and culinary possibilities are endless.',
+      coordinates: { lat: 35.6762, lng: 139.6503 },
+      estimatedBudget: { min: 2000, max: 6000, currency: 'JPY' },
+      bestTimeToVisit: 'March-May & October-November',
+      attractions: [
+        { name: 'Senso-ji Temple', description: 'Ancient Buddhist temple in Asakusa', rating: 4.6, category: 'landmark' },
+        { name: 'Shibuya Crossing', description: 'World-famous scramble crossing', rating: 4.5, category: 'landmark' },
+        { name: 'Shinjuku Gyoen', description: 'Beautiful national garden with cherry blossoms', rating: 4.6, category: 'nature' },
+        { name: 'Tsukiji Outer Market', description: 'Famous seafood and street food market', rating: 4.5, category: 'food' },
+      ],
+      restaurants: [
+        { name: 'Sukiyabashi Jiro', cuisine: 'Sushi', priceRange: '$$$$', rating: 4.9 },
+        { name: 'Ichiran Ramen', cuisine: 'Ramen', priceRange: '$$', rating: 4.6 },
+        { name: 'Gonpachi Nishiazabu', cuisine: 'Japanese', priceRange: '$$$', rating: 4.4 },
+      ],
+      hotels: [
+        { name: 'Aman Tokyo', type: 'luxury', pricePerNight: 950, rating: 4.9, amenities: ['Spa', 'Sky Pool', 'Michelin Dining'] },
+        { name: 'Hotel Gracery Shinjuku', type: 'mid-range', pricePerNight: 200, rating: 4.3, amenities: ['Free WiFi', 'Restaurant', 'Godzilla View'] },
+        { name: 'Capsule Inn Akihabara', type: 'budget', pricePerNight: 45, rating: 3.9, amenities: ['Free WiFi', 'Onsen', 'Lounge'] },
+      ],
+      travelTips: ['Get a Suica card for seamless train travel', 'Visit teamLab Borderless for immersive digital art', 'Try convenience store food - it\'s excellent quality'],
+      weather: { temperature: '16°C avg', condition: 'Humid subtropical', humidity: '73%' },
+      funFact: 'Tokyo has 13 million residents, making it the most populous metropolitan area in the world.',
+    },
+    {
+      name: 'Kyoto', isCapital: false, isPopular: true, isPremium: false,
+      description: "Japan's cultural soul, home to thousands of serene temples, traditional tea houses, enchanting bamboo groves, and the timeless art of geisha culture.",
+      coordinates: { lat: 35.0116, lng: 135.7681 },
+      estimatedBudget: { min: 1500, max: 5000, currency: 'JPY' },
+      bestTimeToVisit: 'March-May & October-November',
+      attractions: [
+        { name: 'Fushimi Inari Shrine', description: 'Thousands of vermilion torii gates', rating: 4.7, category: 'landmark' },
+        { name: 'Arashiyama Bamboo Grove', description: 'Towering bamboo forest path', rating: 4.6, category: 'nature' },
+        { name: 'Kinkaku-ji', description: 'The Golden Pavilion temple', rating: 4.7, category: 'landmark' },
+        { name: 'Nishiki Market', description: "Kyoto's famous covered food market", rating: 4.5, category: 'shopping' },
+      ],
+      restaurants: [
+        { name: 'Kikunoi', cuisine: 'Kaiseki', priceRange: '$$$$', rating: 4.8 },
+        { name: 'Omen Kodai-ji', cuisine: 'Udon', priceRange: '$$', rating: 4.5 },
+      ],
+      hotels: [
+        { name: 'The Ritz-Carlton Kyoto', type: 'luxury', pricePerNight: 700, rating: 4.8, amenities: ['Spa', 'Pool', 'Tearoom'] },
+        { name: 'Citadines Karasuma', type: 'mid-range', pricePerNight: 120, rating: 4.2, amenities: ['Kitchen', 'Free WiFi'] },
+      ],
+      travelTips: ['Visit temples early morning to avoid crowds', 'Take a traditional tea ceremony class', 'Walk the Philosopher\'s Path during cherry blossom season'],
+      weather: { temperature: '16°C avg', condition: 'Humid subtropical', humidity: '71%' },
+    },
+    {
+      name: 'Osaka', isCapital: false, isPopular: true, isPremium: false,
+      description: 'Japan\'s kitchen and comedy capital, known for its vibrant street food culture, neon-lit Dotonbori district, and the magnificent Osaka Castle.',
+      coordinates: { lat: 34.6937, lng: 135.5023 },
+      estimatedBudget: { min: 1200, max: 4000, currency: 'JPY' },
+      bestTimeToVisit: 'March-May & October-November',
+      attractions: [
+        { name: 'Osaka Castle', description: 'Historic castle with museum and observation deck', rating: 4.5, category: 'landmark' },
+        { name: 'Dotonbori', description: 'Iconic entertainment district with neon signs and street food', rating: 4.6, category: 'food' },
+        { name: 'Universal Studios Japan', description: 'World-class theme park with Super Nintendo World', rating: 4.5, category: 'other' },
+      ],
+      restaurants: [
+        { name: 'Kani Doraku', cuisine: 'Crab', priceRange: '$$$', rating: 4.4 },
+        { name: 'Takoyaki Juhachiban', cuisine: 'Street Food', priceRange: '$', rating: 4.3 },
+      ],
+      hotels: [
+        { name: 'St. Regis Osaka', type: 'luxury', pricePerNight: 400, rating: 4.7, amenities: ['Spa', 'Pool', 'Fine Dining'] },
+        { name: 'Cross Hotel Osaka', type: 'mid-range', pricePerNight: 150, rating: 4.4, amenities: ['Free WiFi', 'Restaurant', 'Bar'] },
+      ],
+      travelTips: ['Try takoyaki and okonomiyaki - Osaka specialties', 'Get the Osaka Amazing Pass for attractions and transport'],
+      weather: { temperature: '17°C avg', condition: 'Humid subtropical', humidity: '70%' },
+    },
+  ],
+  Italy: [
+    {
+      name: 'Rome', isCapital: true, isPopular: true, isPremium: false,
+      description: 'The Eternal City captivates with its ancient ruins, Renaissance art, sublime cuisine, and vibrant street life that has thrived for over two millennia.',
+      coordinates: { lat: 41.9028, lng: 12.4964 },
+      estimatedBudget: { min: 1200, max: 4500, currency: 'EUR' },
+      bestTimeToVisit: 'April-June & September-October',
+      attractions: [
+        { name: 'Colosseum', description: 'Ancient Roman amphitheater', rating: 4.8, category: 'landmark' },
+        { name: 'Vatican Museums', description: 'Papal art collection and museums', rating: 4.7, category: 'museum' },
+        { name: 'Trevi Fountain', description: 'Baroque fountain masterpiece', rating: 4.6, category: 'landmark' },
+        { name: 'Roman Forum', description: 'Ancient civic center ruins', rating: 4.6, category: 'landmark' },
+        { name: 'Pantheon', description: 'Ancient Roman temple with iconic dome', rating: 4.7, category: 'landmark' },
+      ],
+      restaurants: [
+        { name: 'La Pergola', cuisine: 'Italian', priceRange: '$$$$', rating: 4.9 },
+        { name: 'Da Enzo al 29', cuisine: 'Roman', priceRange: '$$', rating: 4.6 },
+        { name: 'Pizzeria Bonci', cuisine: 'Pizza', priceRange: '$', rating: 4.5 },
+      ],
+      hotels: [
+        { name: 'Hotel Eden', type: 'luxury', pricePerNight: 600, rating: 4.7, amenities: ['Spa', 'Michelin Restaurant', 'Rooftop Bar'] },
+        { name: 'Hotel Colosseum Roma', type: 'mid-range', pricePerNight: 160, rating: 4.3, amenities: ['Free WiFi', 'Breakfast', 'Terrace'] },
+        { name: 'Generator Rome', type: 'budget', pricePerNight: 50, rating: 4.0, amenities: ['Bar', 'Free WiFi', 'Shared Kitchen'] },
+      ],
+      travelTips: ['Book Colosseum tickets online weeks in advance', 'Visit Vatican early morning to avoid crowds', 'Toss a coin in Trevi Fountain to ensure your return to Rome'],
+      weather: { temperature: '15°C avg', condition: 'Mediterranean', humidity: '75%' },
+    },
+    {
+      name: 'Venice', isCapital: false, isPopular: true, isPremium: false,
+      description: 'A magical city built on water, where gondolas glide through canals past Gothic palaces, and every corner feels like a Renaissance painting come to life.',
+      coordinates: { lat: 45.4408, lng: 12.3155 },
+      estimatedBudget: { min: 1500, max: 5000, currency: 'EUR' },
+      bestTimeToVisit: 'April-June & September-October',
+      attractions: [
+        { name: 'St. Mark\'s Basilica', description: 'Stunning Byzantine cathedral in Piazza San Marco', rating: 4.7, category: 'landmark' },
+        { name: 'Grand Canal', description: 'Main waterway lined with Renaissance palaces', rating: 4.8, category: 'landmark' },
+        { name: 'Rialto Bridge', description: 'Iconic covered bridge and market area', rating: 4.5, category: 'landmark' },
+        { name: 'Doge\'s Palace', description: 'Gothic palace with Bridge of Sighs', rating: 4.6, category: 'museum' },
+      ],
+      restaurants: [
+        { name: 'Osteria alle Testiere', cuisine: 'Venetian', priceRange: '$$$', rating: 4.6 },
+        { name: 'Trattoria Al Gazzettino', cuisine: 'Italian', priceRange: '$$', rating: 4.4 },
+      ],
+      hotels: [
+        { name: 'Hotel Danieli', type: 'luxury', pricePerNight: 550, rating: 4.7, amenities: ['Grand Canal View', 'Restaurant', 'Rooftop Terrace'] },
+        { name: 'Hotel Palazzo Barbarigo', type: 'mid-range', pricePerNight: 200, rating: 4.4, amenities: ['Free WiFi', 'Water View', 'Bar'] },
+      ],
+      travelTips: ['Get lost in the small alleyways - that\'s where the magic is', 'Take a gondola ride at sunset for the best experience', 'Book a water taxi from the airport for an unforgettable arrival'],
+      weather: { temperature: '13°C avg', condition: 'Humid subtropical', humidity: '78%' },
+    },
+    {
+      name: 'Florence', isCapital: false, isPopular: true, isPremium: false,
+      description: 'The cradle of the Renaissance, where Michelangelo\'s David, Brunelleschi\'s Duomo, and Uffizi Gallery masterpieces await around every corner.',
+      coordinates: { lat: 43.7696, lng: 11.2558 },
+      estimatedBudget: { min: 1000, max: 4000, currency: 'EUR' },
+      bestTimeToVisit: 'April-June & September-October',
+      attractions: [
+        { name: 'Duomo Cathedral', description: 'Iconic cathedral with Brunelleschi\'s dome', rating: 4.8, category: 'landmark' },
+        { name: 'Uffizi Gallery', description: 'World-renowned art museum with Botticelli\'s Venus', rating: 4.8, category: 'museum' },
+        { name: 'Ponte Vecchio', description: 'Historic bridge with jewelry shops', rating: 4.6, category: 'landmark' },
+        { name: 'Galleria dell\'Accademia', description: 'Home to Michelangelo\'s David', rating: 4.7, category: 'museum' },
+      ],
+      restaurants: [
+        { name: 'Enoteca Pinchiorri', cuisine: 'Tuscan', priceRange: '$$$$', rating: 4.8 },
+        { name: 'Trattoria Mario', cuisine: 'Florentine', priceRange: '$$', rating: 4.5 },
+      ],
+      hotels: [
+        { name: 'Four Seasons Florence', type: 'luxury', pricePerNight: 700, rating: 4.8, amenities: ['Spa', 'Pool', 'Michelin Restaurant'] },
+        { name: 'Hotel Palazzo Vecchio', type: 'mid-range', pricePerNight: 140, rating: 4.2, amenities: ['Free WiFi', 'Breakfast', 'Terrace'] },
+      ],
+      travelTips: ['Book Uffizi and Accademia tickets months ahead', 'Climb Giotto\'s Bell Tower for panoramic city views', 'Try bistecca alla Fiorentina - the famous Florentine steak'],
+      weather: { temperature: '15°C avg', condition: 'Mediterranean', humidity: '72%' },
+    },
+  ],
+  Thailand: [
+    {
+      name: 'Bangkok', isCapital: true, isPopular: true, isPremium: false,
+      description: 'A sensory explosion of golden temples, floating markets, sizzling street food, and a nightlife that never sleeps in Southeast Asia\'s most dynamic capital.',
+      coordinates: { lat: 13.7563, lng: 100.5018 },
+      estimatedBudget: { min: 500, max: 2000, currency: 'THB' },
+      bestTimeToVisit: 'November-February',
+      attractions: [
+        { name: 'Grand Palace', description: 'Former royal residence with Wat Phra Kaew', rating: 4.6, category: 'landmark' },
+        { name: 'Wat Arun', description: 'Temple of Dawn along the Chao Phraya River', rating: 4.5, category: 'landmark' },
+        { name: 'Chatuchak Market', description: 'One of the world\'s largest weekend markets', rating: 4.4, category: 'shopping' },
+        { name: 'Khao San Road', description: 'Famous backpacker street with bars and shops', rating: 4.2, category: 'nightlife' },
+      ],
+      restaurants: [
+        { name: 'Sorn', cuisine: 'Thai Southern', priceRange: '$$$$', rating: 4.8 },
+        { name: 'Jay Fai', cuisine: 'Street Food', priceRange: '$$$', rating: 4.6 },
+        { name: 'Pad Thai Thip Samai', cuisine: 'Thai', priceRange: '$', rating: 4.5 },
+      ],
+      hotels: [
+        { name: 'Mandarin Oriental Bangkok', type: 'luxury', pricePerNight: 400, rating: 4.8, amenities: ['Spa', 'Pool', 'Michelin Dining'] },
+        { name: 'Siam@Siam Design Hotel', type: 'mid-range', pricePerNight: 90, rating: 4.3, amenities: ['Pool', 'Rooftop Bar', 'Free WiFi'] },
+        { name: 'Lub d Bangkok', type: 'budget', pricePerNight: 25, rating: 4.1, amenities: ['Pool', 'Bar', 'Co-working'] },
+      ],
+      travelTips: ['Use tuk-tuks for short trips but negotiate price first', 'Try street food from busy stalls for the freshest meals', 'Dress modestly when visiting temples'],
+      weather: { temperature: '30°C avg', condition: 'Tropical', humidity: '80%' },
+    },
+    {
+      name: 'Chiang Mai', isCapital: false, isPopular: true, isPremium: false,
+      description: 'The cultural heart of Northern Thailand, surrounded by misty mountains, ancient temples, and lush jungles perfect for elephant sanctuaries and hill tribe treks.',
+      coordinates: { lat: 18.7883, lng: 98.9853 },
+      estimatedBudget: { min: 300, max: 1200, currency: 'THB' },
+      bestTimeToVisit: 'November-February',
+      attractions: [
+        { name: 'Doi Suthep', description: 'Sacred mountain temple with golden chedi', rating: 4.7, category: 'landmark' },
+        { name: 'Old City Temples', description: 'Historic walled city with over 30 temples', rating: 4.5, category: 'landmark' },
+        { name: 'Elephant Nature Park', description: 'Ethical elephant sanctuary', rating: 4.8, category: 'nature' },
+        { name: 'Night Bazaar', description: 'Vibrant night market for handicrafts', rating: 4.3, category: 'shopping' },
+      ],
+      restaurants: [
+        { name: 'David\'s Kitchen', cuisine: 'International', priceRange: '$$$', rating: 4.7 },
+        { name: 'Khao Soi Khun Yai', cuisine: 'Northern Thai', priceRange: '$', rating: 4.6 },
+      ],
+      hotels: [
+        { name: '137 Pillars House', type: 'luxury', pricePerNight: 250, rating: 4.7, amenities: ['Pool', 'Spa', 'Restaurant'] },
+        { name: 'Hotel des Artists', type: 'mid-range', pricePerNight: 60, rating: 4.3, amenities: ['Pool', 'Free WiFi'] },
+      ],
+      travelTips: ['Take a Thai cooking class - Chiang Mai is famous for them', 'Visit ethical elephant sanctuaries only', 'Explore the Old City by bicycle'],
+      weather: { temperature: '26°C avg', condition: 'Tropical', humidity: '75%' },
+    },
+    {
+      name: 'Phuket', isCapital: false, isPopular: true, isPremium: false,
+      description: 'Thailand\'s largest island, famous for stunning beaches, crystal-clear waters, vibrant nightlife, and incredible diving spots in the Andaman Sea.',
+      coordinates: { lat: 7.8804, lng: 98.3923 },
+      estimatedBudget: { min: 600, max: 2500, currency: 'THB' },
+      bestTimeToVisit: 'November-April',
+      attractions: [
+        { name: 'Phi Phi Islands', description: 'Stunning archipelago with turquoise waters', rating: 4.7, category: 'nature' },
+        { name: 'Patong Beach', description: 'Popular beach with bustling nightlife', rating: 4.3, category: 'other' },
+        { name: 'Big Buddha', description: 'Giant marble Buddha statue with panoramic views', rating: 4.5, category: 'landmark' },
+        { name: 'James Bond Island', description: 'Iconic limestone karst from The Man with the Golden Gun', rating: 4.6, category: 'nature' },
+      ],
+      restaurants: [
+        { name: 'Suay Restaurant', cuisine: 'Thai Fusion', priceRange: '$$$', rating: 4.5 },
+        { name: 'Kan Eang@Pier', cuisine: 'Seafood', priceRange: '$$', rating: 4.4 },
+      ],
+      hotels: [
+        { name: 'Amanpuri', type: 'luxury', pricePerNight: 800, rating: 4.9, amenities: ['Private Beach', 'Spa', 'Pool'] },
+        { name: 'Holiday Inn Resort', type: 'mid-range', pricePerNight: 100, rating: 4.2, amenities: ['Pool', 'Kids Club', 'Beach Access'] },
+      ],
+      travelTips: ['Book island tours through reputable operators', 'Rent a scooter to explore the island', 'Visit during high season (Nov-Apr) for best weather'],
+      weather: { temperature: '28°C avg', condition: 'Tropical', humidity: '82%' },
+    },
+  ],
+  'United Kingdom': [
+    {
+      name: 'London', isCapital: true, isPopular: true, isPremium: false,
+      description: 'A global hub of history, culture, and innovation where royal pageantry meets cutting-edge art, world-class theatre, and diverse culinary scenes.',
+      coordinates: { lat: 51.5074, lng: -0.1278 },
+      estimatedBudget: { min: 1500, max: 5500, currency: 'GBP' },
+      bestTimeToVisit: 'May-September',
+      attractions: [
+        { name: 'Big Ben', description: 'Iconic clock tower at the Palace of Westminster', rating: 4.6, category: 'landmark' },
+        { name: 'British Museum', description: 'World history museum with the Rosetta Stone', rating: 4.8, category: 'museum' },
+        { name: 'Tower Bridge', description: 'Victorian bascule bridge over the Thames', rating: 4.7, category: 'landmark' },
+        { name: 'Hyde Park', description: 'Royal park with Serpentine Lake', rating: 4.5, category: 'nature' },
+        { name: 'Westminster Abbey', description: 'Historic Gothic abbey and coronation church', rating: 4.7, category: 'landmark' },
+      ],
+      restaurants: [
+        { name: 'The Fat Duck', cuisine: 'Modern British', priceRange: '$$$$', rating: 4.9 },
+        { name: 'Dishoom', cuisine: 'Indian', priceRange: '$$', rating: 4.6 },
+        { name: 'Borough Market', cuisine: 'Various', priceRange: '$$', rating: 4.5 },
+      ],
+      hotels: [
+        { name: 'The Ritz London', type: 'luxury', pricePerNight: 600, rating: 4.8, amenities: ['Michelin Restaurant', 'Afternoon Tea', 'Spa'] },
+        { name: 'The Hoxton Shoreditch', type: 'mid-range', pricePerNight: 180, rating: 4.4, amenities: ['Free WiFi', 'Restaurant', 'Coworking'] },
+        { name: 'YHA London Central', type: 'budget', pricePerNight: 40, rating: 4.0, amenities: ['Breakfast', 'Free WiFi', 'Social Spaces'] },
+      ],
+      travelTips: ['Get an Oyster card for the best transport rates', 'Book theatre tickets in advance for West End shows', 'Many museums are free - take advantage of them'],
+      weather: { temperature: '11°C avg', condition: 'Temperate maritime', humidity: '76%' },
+    },
+    {
+      name: 'Edinburgh', isCapital: false, isPopular: true, isPremium: false,
+      description: 'Scotland\'s enchanting capital, where medieval Old Town meets Georgian New Town, dominated by the magnificent Edinburgh Castle and dramatic Arthur\'s Seat.',
+      coordinates: { lat: 55.9533, lng: -3.1883 },
+      estimatedBudget: { min: 1000, max: 3500, currency: 'GBP' },
+      bestTimeToVisit: 'May-September',
+      attractions: [
+        { name: 'Edinburgh Castle', description: 'Historic castle atop Castle Rock', rating: 4.7, category: 'landmark' },
+        { name: 'Arthur\'s Seat', description: 'Ancient volcano and hill with panoramic views', rating: 4.6, category: 'nature' },
+        { name: 'Royal Mile', description: 'Historic street connecting castle to palace', rating: 4.5, category: 'landmark' },
+        { name: 'National Museum of Scotland', description: 'Museum of Scottish history and culture', rating: 4.6, category: 'museum' },
+      ],
+      restaurants: [
+        { name: 'The Kitchin', cuisine: 'Scottish', priceRange: '$$$$', rating: 4.7 },
+        { name: 'Ondine', cuisine: 'Seafood', priceRange: '$$$', rating: 4.5 },
+      ],
+      hotels: [
+        { name: 'The Balmoral', type: 'luxury', pricePerNight: 350, rating: 4.7, amenities: ['Spa', 'Michelin Restaurant', 'Afternoon Tea'] },
+        { name: 'Motel One Edinburgh', type: 'mid-range', pricePerNight: 90, rating: 4.2, amenities: ['Free WiFi', 'Bar', 'Central Location'] },
+      ],
+      travelTips: ['Visit during the Fringe Festival in August for incredible performances', 'Hike Arthur\'s Seat at sunrise for stunning views'],
+      weather: { temperature: '9°C avg', condition: 'Temperate maritime', humidity: '80%' },
+    },
+    {
+      name: 'Manchester', isCapital: false, isPopular: false, isPremium: false,
+      description: 'A vibrant northern powerhouse of music, football, and industrial heritage, with world-class galleries, diverse dining, and a legendary nightlife scene.',
+      coordinates: { lat: 53.4808, lng: -2.2426 },
+      estimatedBudget: { min: 800, max: 2500, currency: 'GBP' },
+      bestTimeToVisit: 'May-September',
+      attractions: [
+        { name: 'Old Trafford', description: 'Iconic Manchester United football stadium', rating: 4.5, category: 'landmark' },
+        { name: 'Science and Industry Museum', description: 'Museum of Manchester\'s industrial heritage', rating: 4.5, category: 'museum' },
+        { name: 'Northern Quarter', description: 'Trendy district with independent shops and street art', rating: 4.4, category: 'shopping' },
+      ],
+      restaurants: [
+        { name: 'Mana', cuisine: 'Modern British', priceRange: '$$$$', rating: 4.7 },
+        { name: 'Rudys Pizza', cuisine: 'Pizza', priceRange: '$$', rating: 4.4 },
+      ],
+      hotels: [
+        { name: 'The Lowry Hotel', type: 'luxury', pricePerNight: 250, rating: 4.5, amenities: ['Spa', 'Restaurant', 'River View'] },
+        { name: 'Hotel Gotham', type: 'mid-range', pricePerNight: 120, rating: 4.3, amenities: ['Rooftop Bar', 'Free WiFi'] },
+      ],
+      travelTips: ['Take a stadium tour at Old Trafford', 'Explore the Northern Quarter for vintage shops and street art'],
+      weather: { temperature: '10°C avg', condition: 'Temperate maritime', humidity: '78%' },
+    },
+  ],
+  'United States': [
+    {
+      name: 'New York City', isCapital: false, isPopular: true, isPremium: false,
+      description: 'The Big Apple offers an unparalleled urban experience with its iconic skyline, diverse neighborhoods, world-class museums, and endless entertainment options.',
+      coordinates: { lat: 40.7128, lng: -74.0060 },
+      estimatedBudget: { min: 2000, max: 8000, currency: 'USD' },
+      bestTimeToVisit: 'April-June & September-November',
+      attractions: [
+        { name: 'Statue of Liberty', description: 'Iconic American symbol of freedom', rating: 4.7, category: 'landmark' },
+        { name: 'Central Park', description: 'Urban park in the heart of Manhattan', rating: 4.8, category: 'nature' },
+        { name: 'Times Square', description: 'Commercial and entertainment hub', rating: 4.5, category: 'landmark' },
+        { name: 'Metropolitan Museum of Art', description: 'World\'s largest art museum', rating: 4.8, category: 'museum' },
+        { name: 'Broadway', description: 'World-famous theatre district', rating: 4.7, category: 'nightlife' },
+      ],
+      restaurants: [
+        { name: 'Eleven Madison Park', cuisine: 'Modern American', priceRange: '$$$$', rating: 4.9 },
+        { name: 'Katz\'s Delicatessen', cuisine: 'Jewish Deli', priceRange: '$$', rating: 4.5 },
+        { name: 'Joe\'s Pizza', cuisine: 'Pizza', priceRange: '$', rating: 4.4 },
+      ],
+      hotels: [
+        { name: 'The Plaza Hotel', type: 'luxury', pricePerNight: 700, rating: 4.7, amenities: ['Spa', 'Fine Dining', 'Central Park View'] },
+        { name: 'The Jane Hotel', type: 'mid-range', pricePerNight: 150, rating: 4.2, amenities: ['Free WiFi', 'Restaurant', 'Bar'] },
+        { name: 'HI NYC Hostel', type: 'budget', pricePerNight: 50, rating: 4.0, amenities: ['Free WiFi', 'Breakfast', 'Social Events'] },
+      ],
+      travelTips: ['Use the subway for the fastest transportation', 'Book Broadway shows in advance', 'Walk across the Brooklyn Bridge for stunning skyline views'],
+      weather: { temperature: '13°C avg', condition: 'Humid subtropical', humidity: '72%' },
+    },
+    {
+      name: 'San Francisco', isCapital: false, isPopular: true, isPremium: false,
+      description: 'The cultural and technological hub of the West Coast, famous for the Golden Gate Bridge, cable cars, diverse neighborhoods, and iconic fog.',
+      coordinates: { lat: 37.7749, lng: -122.4194 },
+      estimatedBudget: { min: 1800, max: 6000, currency: 'USD' },
+      bestTimeToVisit: 'September-November',
+      attractions: [
+        { name: 'Golden Gate Bridge', description: 'Iconic suspension bridge', rating: 4.7, category: 'landmark' },
+        { name: 'Alcatraz Island', description: 'Infamous former prison island', rating: 4.6, category: 'museum' },
+        { name: 'Fisherman\'s Wharf', description: 'Popular waterfront area with sea lions', rating: 4.3, category: 'landmark' },
+        { name: 'Golden Gate Park', description: 'Large urban park with gardens and museums', rating: 4.6, category: 'nature' },
+      ],
+      restaurants: [
+        { name: 'Benu', cuisine: 'Modern American', priceRange: '$$$$', rating: 4.8 },
+        { name: 'Swan Oyster Depot', cuisine: 'Seafood', priceRange: '$$', rating: 4.6 },
+      ],
+      hotels: [
+        { name: 'Fairmont San Francisco', type: 'luxury', pricePerNight: 400, rating: 4.6, amenities: ['Spa', 'Pool', 'Bay View'] },
+        { name: 'Hotel Zeppelin', type: 'mid-range', pricePerNight: 160, rating: 4.3, amenities: ['Free WiFi', 'Bar', 'Bike Rental'] },
+      ],
+      travelTips: ['Bring layers - the fog can roll in suddenly', 'Book Alcatraz tickets weeks in advance', 'Use public transit to avoid expensive parking'],
+      weather: { temperature: '14°C avg', condition: 'Mediterranean', humidity: '75%' },
+    },
+    {
+      name: 'Chicago', isCapital: false, isPopular: false, isPremium: false,
+      description: 'The Windy City boasts stunning architecture, world-class museums, deep-dish pizza, vibrant blues and jazz scenes, and beautiful Lake Michigan shoreline.',
+      coordinates: { lat: 41.8781, lng: -87.6298 },
+      estimatedBudget: { min: 1200, max: 4500, currency: 'USD' },
+      bestTimeToVisit: 'May-October',
+      attractions: [
+        { name: 'Millennium Park', description: 'Public park with Cloud Gate sculpture (The Bean)', rating: 4.6, category: 'landmark' },
+        { name: 'Art Institute of Chicago', description: 'World-renowned art museum', rating: 4.7, category: 'museum' },
+        { name: 'Willis Tower Skydeck', description: 'Observation deck with glass ledge', rating: 4.5, category: 'landmark' },
+        { name: 'Navy Pier', description: 'Lakefront pier with rides and attractions', rating: 4.3, category: 'other' },
+      ],
+      restaurants: [
+        { name: 'Alinea', cuisine: 'Molecular Gastronomy', priceRange: '$$$$', rating: 4.9 },
+        { name: 'Lou Malnati\'s', cuisine: 'Deep Dish Pizza', priceRange: '$$', rating: 4.5 },
+      ],
+      hotels: [
+        { name: 'The Langham Chicago', type: 'luxury', pricePerNight: 450, rating: 4.7, amenities: ['Spa', 'Pool', 'River View'] },
+        { name: 'Club Quarters', type: 'mid-range', pricePerNight: 130, rating: 4.2, amenities: ['Free WiFi', 'Gym', 'Central Location'] },
+      ],
+      travelTips: ['Try deep-dish pizza at least once', 'Take an architecture boat tour on the Chicago River', 'Visit during summer for festivals and outdoor events'],
+      weather: { temperature: '10°C avg', condition: 'Humid continental', humidity: '70%' },
+    },
+  ],
+  Australia: [
+    {
+      name: 'Sydney', isCapital: false, isPopular: true, isPremium: false,
+      description: 'A stunning harbour city where golden beaches, world-famous architecture, and a laid-back outdoor lifestyle meet a thriving arts and food scene.',
+      coordinates: { lat: -33.8688, lng: 151.2093 },
+      estimatedBudget: { min: 2000, max: 7000, currency: 'AUD' },
+      bestTimeToVisit: 'October-April',
+      attractions: [
+        { name: 'Sydney Opera House', description: 'UNESCO-listed performing arts venue', rating: 4.8, category: 'landmark' },
+        { name: 'Bondi Beach', description: 'Iconic beach with coastal walk', rating: 4.6, category: 'nature' },
+        { name: 'Sydney Harbour Bridge', description: 'Climbable steel arch bridge', rating: 4.7, category: 'landmark' },
+        { name: 'Taronga Zoo', description: 'Zoo with native Australian animals and harbour views', rating: 4.5, category: 'other' },
+      ],
+      restaurants: [
+        { name: 'Quay', cuisine: 'Modern Australian', priceRange: '$$$$', rating: 4.8 },
+        { name: 'Harry\'s Bondi', cuisine: 'Australian', priceRange: '$$', rating: 4.4 },
+        { name: 'The Fish Market', cuisine: 'Seafood', priceRange: '$$', rating: 4.5 },
+      ],
+      hotels: [
+        { name: 'Park Hyatt Sydney', type: 'luxury', pricePerNight: 650, rating: 4.8, amenities: ['Opera House View', 'Spa', 'Pool'] },
+        { name: 'QT Sydney', type: 'mid-range', pricePerNight: 220, rating: 4.4, amenities: ['Free WiFi', 'Restaurant', 'Rooftop Bar'] },
+        { name: 'Wake Up Sydney', type: 'budget', pricePerNight: 45, rating: 4.0, amenities: ['Free WiFi', 'Breakfast', 'Social Events'] },
+      ],
+      travelTips: ['Take the ferry from Circular Quay to Manly', 'Apply sunscreen liberally - the sun is intense', 'Pack layers for changeable weather'],
+      weather: { temperature: '18°C avg', condition: 'Subtropical', humidity: '70%' },
+    },
+    {
+      name: 'Melbourne', isCapital: false, isPopular: true, isPremium: false,
+      description: 'Australia\'s cultural capital, known for its vibrant street art, incredible coffee culture, diverse food scene, and the iconic Great Ocean Road nearby.',
+      coordinates: { lat: -37.8136, lng: 144.9631 },
+      estimatedBudget: { min: 1500, max: 5500, currency: 'AUD' },
+      bestTimeToVisit: 'October-April',
+      attractions: [
+        { name: 'Great Ocean Road', description: 'Scenic coastal drive with Twelve Apostles', rating: 4.8, category: 'nature' },
+        { name: 'Federation Square', description: 'Cultural hub with galleries and events', rating: 4.3, category: 'landmark' },
+        { name: 'Queen Victoria Market', description: 'Historic market with fresh produce and crafts', rating: 4.5, category: 'shopping' },
+        { name: 'Royal Botanic Gardens', description: 'Stunning botanical gardens by the Yarra River', rating: 4.6, category: 'nature' },
+      ],
+      restaurants: [
+        { name: 'Attica', cuisine: 'Modern Australian', priceRange: '$$$$', rating: 4.8 },
+        { name: 'Chin Chin', cuisine: 'Thai', priceRange: '$$', rating: 4.5 },
+      ],
+      hotels: [
+        { name: 'The Langham Melbourne', type: 'luxury', pricePerNight: 350, rating: 4.6, amenities: ['Spa', 'Pool', 'River View'] },
+        { name: 'Adelphi Hotel', type: 'mid-range', pricePerNight: 150, rating: 4.3, amenities: ['Rooftop Pool', 'Bar', 'Free WiFi'] },
+      ],
+      travelTips: ['Explore the laneways for hidden bars and street art', 'Coffee culture is serious - try a flat white', 'Drive the Great Ocean Road over 2-3 days'],
+      weather: { temperature: '15°C avg', condition: 'Temperate oceanic', humidity: '68%' },
+    },
+    {
+      name: 'Brisbane', isCapital: false, isPopular: false, isPremium: false,
+      description: 'A sunny riverside city with a relaxed outdoor lifestyle, cultural precincts, and gateway to the Gold Coast and Sunshine Coast beaches.',
+      coordinates: { lat: -27.4698, lng: 153.0251 },
+      estimatedBudget: { min: 1000, max: 3500, currency: 'AUD' },
+      bestTimeToVisit: 'April-October',
+      attractions: [
+        { name: 'South Bank Parklands', description: 'Riverfront park with lagoon and restaurants', rating: 4.5, category: 'nature' },
+        { name: 'Story Bridge', description: 'Climbable bridge with city views', rating: 4.4, category: 'landmark' },
+        { name: 'Lone Pine Koala Sanctuary', description: 'World\'s largest koala sanctuary', rating: 4.6, category: 'other' },
+      ],
+      restaurants: [
+        { name: 'E\'cco Bistro', cuisine: 'Modern Australian', priceRange: '$$$', rating: 4.5 },
+        { name: 'Gerard\'s Bistro', cuisine: 'Middle Eastern', priceRange: '$$', rating: 4.4 },
+      ],
+      hotels: [
+        { name: 'The Calile Hotel', type: 'luxury', pricePerNight: 280, rating: 4.6, amenities: ['Pool', 'Spa', 'Restaurant'] },
+        { name: 'Ibis Brisbane', type: 'budget', pricePerNight: 80, rating: 4.0, amenities: ['Free WiFi', 'Breakfast'] },
+      ],
+      travelTips: ['Visit the Australia Zoo for incredible wildlife encounters', 'Take a day trip to the Gold Coast beaches'],
+      weather: { temperature: '21°C avg', condition: 'Subtropical', humidity: '72%' },
+    },
+  ],
+  Spain: [
+    {
+      name: 'Barcelona', isCapital: false, isPopular: true, isPremium: false,
+      description: 'A Mediterranean gem where Gaudí\'s whimsical architecture, sun-drenched beaches, lively tapas bars, and rich Catalan culture create an unforgettable escape.',
+      coordinates: { lat: 41.3874, lng: 2.1686 },
+      estimatedBudget: { min: 1000, max: 4000, currency: 'EUR' },
+      bestTimeToVisit: 'May-June & September-October',
+      attractions: [
+        { name: 'Sagrada Familia', description: 'Gaudí\'s unfinished basilica masterpiece', rating: 4.8, category: 'landmark' },
+        { name: 'Park Güell', description: 'Whimsical public park by Gaudí', rating: 4.5, category: 'landmark' },
+        { name: 'La Rambla', description: 'Iconic tree-lined pedestrian street', rating: 4.4, category: 'shopping' },
+        { name: 'Barceloneta Beach', description: 'Popular urban beach with restaurants', rating: 4.3, category: 'nature' },
+        { name: 'Gothic Quarter', description: 'Medieval streets and Roman ruins', rating: 4.6, category: 'landmark' },
+      ],
+      restaurants: [
+        { name: 'Tickets', cuisine: 'Tapas', priceRange: '$$$$', rating: 4.7 },
+        { name: 'La Boqueria Market', cuisine: 'Various', priceRange: '$$', rating: 4.5 },
+        { name: 'Bar Canete', cuisine: 'Catalan', priceRange: '$$', rating: 4.5 },
+      ],
+      hotels: [
+        { name: 'Hotel Arts Barcelona', type: 'luxury', pricePerNight: 450, rating: 4.7, amenities: ['Spa', 'Pool', 'Michelin Restaurant'] },
+        { name: 'Catalonia Catedral', type: 'mid-range', pricePerNight: 140, rating: 4.3, amenities: ['Rooftop Pool', 'Free WiFi', 'Terrace'] },
+        { name: 'Generator Barcelona', type: 'budget', pricePerNight: 35, rating: 4.0, amenities: ['Bar', 'Free WiFi', 'Social Events'] },
+      ],
+      travelTips: ['Book Sagrada Familia tickets weeks ahead', 'Watch for pickpockets on Las Ramblas', 'Try authentic paella and tapas in El Born'],
+      weather: { temperature: '17°C avg', condition: 'Mediterranean', humidity: '72%' },
+    },
+    {
+      name: 'Madrid', isCapital: true, isPopular: true, isPremium: false,
+      description: 'Spain\'s vibrant capital pulses with energy through its world-class art galleries, royal palaces, bustling plazas, and legendary nightlife that lasts until dawn.',
+      coordinates: { lat: 40.4168, lng: -3.7038 },
+      estimatedBudget: { min: 1000, max: 4000, currency: 'EUR' },
+      bestTimeToVisit: 'March-May & September-November',
+      attractions: [
+        { name: 'Prado Museum', description: 'World-class art museum with Spanish masters', rating: 4.7, category: 'museum' },
+        { name: 'Royal Palace', description: 'Official residence of the Spanish royal family', rating: 4.6, category: 'landmark' },
+        { name: 'Plaza Mayor', description: 'Historic main square', rating: 4.5, category: 'landmark' },
+        { name: 'Retiro Park', description: 'Beautiful park with lake and crystal palace', rating: 4.7, category: 'nature' },
+      ],
+      restaurants: [
+        { name: 'DiverXo', cuisine: 'Molecular', priceRange: '$$$$', rating: 4.8 },
+        { name: 'Casa Lucio', cuisine: 'Spanish', priceRange: '$$$', rating: 4.5 },
+        { name: 'Mercado de San Miguel', cuisine: 'Tapas', priceRange: '$$', rating: 4.4 },
+      ],
+      hotels: [
+        { name: 'Four Seasons Madrid', type: 'luxury', pricePerNight: 500, rating: 4.8, amenities: ['Spa', 'Pool', 'Rooftop Bar'] },
+        { name: 'Room Mate Alba', type: 'mid-range', pricePerNight: 120, rating: 4.3, amenities: ['Free WiFi', 'Breakfast', 'Central Location'] },
+      ],
+      travelTips: ['Visit the Prado Museum free in the last 2 hours', 'Enjoy churros with chocolate at Chocolatería San Ginés', 'Experience late-night dining - restaurants open at 9 PM'],
+      weather: { temperature: '15°C avg', condition: 'Mediterranean continental', humidity: '60%' },
+    },
+    {
+      name: 'Seville', isCapital: false, isPopular: true, isPremium: false,
+      description: 'The heart of Andalusia, where flamenco echoes through narrow streets, orange trees perfume the air, and Moorish architecture tells stories of a rich past.',
+      coordinates: { lat: 37.3891, lng: -5.9845 },
+      estimatedBudget: { min: 800, max: 3000, currency: 'EUR' },
+      bestTimeToVisit: 'March-May & September-November',
+      attractions: [
+        { name: 'Alcázar of Seville', description: 'Royal palace with stunning Moorish architecture', rating: 4.7, category: 'landmark' },
+        { name: 'Seville Cathedral', description: 'Largest Gothic cathedral in the world', rating: 4.7, category: 'landmark' },
+        { name: 'Plaza de España', description: 'Grand semicircular plaza with canals', rating: 4.8, category: 'landmark' },
+        { name: 'Santa Cruz Quarter', description: 'Charming old Jewish quarter with narrow streets', rating: 4.5, category: 'landmark' },
+      ],
+      restaurants: [
+        { name: 'Azabache', cuisine: 'Andalusian', priceRange: '$$$', rating: 4.5 },
+        { name: 'Bar Alfalfa', cuisine: 'Tapas', priceRange: '$', rating: 4.4 },
+      ],
+      hotels: [
+        { name: 'Hotel Alfonso XIII', type: 'luxury', pricePerNight: 350, rating: 4.7, amenities: ['Pool', 'Spa', 'Moorish Architecture'] },
+        { name: 'Las Casas de la Judería', type: 'mid-range', pricePerNight: 100, rating: 4.3, amenities: ['Pool', 'Free WiFi', 'Courtyard'] },
+      ],
+      travelTips: ['Watch an authentic flamenco show in Triana', 'Visit the Alcázar early morning', 'Escape the midday heat with siesta'],
+      weather: { temperature: '19°C avg', condition: 'Mediterranean continental', humidity: '65%' },
+    },
+  ],
+  India: [
+    {
+      name: 'New Delhi', isCapital: true, isPopular: true, isPremium: false,
+      description: 'India\'s sprawling capital where ancient Mughal monuments stand alongside British colonial architecture and modern skyscrapers in a fascinating blend of old and new.',
+      coordinates: { lat: 28.6139, lng: 77.2090 },
+      estimatedBudget: { min: 400, max: 1500, currency: 'INR' },
+      bestTimeToVisit: 'October-March',
+      attractions: [
+        { name: 'Red Fort', description: 'Massive Mughal fort complex', rating: 4.5, category: 'landmark' },
+        { name: 'Qutub Minar', description: 'Tallest brick minaret in the world', rating: 4.4, category: 'landmark' },
+        { name: 'India Gate', description: 'War memorial archway', rating: 4.4, category: 'landmark' },
+        { name: 'Humayun\'s Tomb', description: 'UNESCO-listed Mughal tomb and garden', rating: 4.5, category: 'landmark' },
+      ],
+      restaurants: [
+        { name: 'Indian Accent', cuisine: 'Modern Indian', priceRange: '$$$$', rating: 4.8 },
+        { name: 'Karim\'s', cuisine: 'Mughlai', priceRange: '$$', rating: 4.5 },
+        { name: 'Paranthe Wali Gali', cuisine: 'Street Food', priceRange: '$', rating: 4.3 },
+      ],
+      hotels: [
+        { name: 'The Oberoi Amarvilas', type: 'luxury', pricePerNight: 500, rating: 4.8, amenities: ['Spa', 'Pool', 'Taj View'] },
+        { name: 'The Imperial', type: 'mid-range', pricePerNight: 150, rating: 4.5, amenities: ['Pool', 'Spa', 'Heritage'] },
+      ],
+      travelTips: ['Use the Delhi Metro to avoid traffic', 'Drink only bottled water', 'Haggle politely at markets'],
+      weather: { temperature: '25°C avg', condition: 'Humid subtropical', humidity: '65%' },
+    },
+    {
+      name: 'Mumbai', isCapital: false, isPopular: true, isPremium: false,
+      description: 'The city of dreams, where Bollywood glitz meets colonial architecture, street food stalls sit beside luxury hotels, and the Arabian Sea kisses Marine Drive.',
+      coordinates: { lat: 19.0760, lng: 72.8777 },
+      estimatedBudget: { min: 500, max: 2000, currency: 'INR' },
+      bestTimeToVisit: 'November-February',
+      attractions: [
+        { name: 'Gateway of India', description: 'Iconic basalt arch monument', rating: 4.5, category: 'landmark' },
+        { name: 'Marine Drive', description: 'Scenic promenade along Arabian Sea', rating: 4.6, category: 'landmark' },
+        { name: 'Elephanta Caves', description: 'Ancient cave temples on island', rating: 4.4, category: 'museum' },
+        { name: 'Chhatrapati Shivaji Terminus', description: 'Historic Gothic railway station', rating: 4.5, category: 'landmark' },
+      ],
+      restaurants: [
+        { name: 'Wasabi by Morimoto', cuisine: 'Japanese', priceRange: '$$$$', rating: 4.6 },
+        { name: 'Bademiya', cuisine: 'Street Food', priceRange: '$', rating: 4.4 },
+        { name: 'Britannia & Co.', cuisine: 'Iranian', priceRange: '$$', rating: 4.5 },
+      ],
+      hotels: [
+        { name: 'Taj Mahal Palace', type: 'luxury', pricePerNight: 400, rating: 4.7, amenities: ['Spa', 'Pool', 'Sea View'] },
+        { name: 'The St. Regis Mumbai', type: 'luxury', pricePerNight: 300, rating: 4.6, amenities: ['Spa', 'Pool', 'Sky Bar'] },
+      ],
+      travelTips: ['Take a local train for an authentic experience', 'Try street vada pav and pav bhaji', 'Visit the dhobi ghat for unique photography'],
+      weather: { temperature: '27°C avg', condition: 'Tropical', humidity: '78%' },
+    },
+    {
+      name: 'Jaipur', isCapital: false, isPopular: true, isPremium: false,
+      description: 'The Pink City of Rajasthan, famous for its majestic forts, royal palaces, vibrant bazaars, and rich Rajput heritage that transports visitors to a bygone era.',
+      coordinates: { lat: 26.9124, lng: 75.7873 },
+      estimatedBudget: { min: 300, max: 1200, currency: 'INR' },
+      bestTimeToVisit: 'October-March',
+      attractions: [
+        { name: 'Amber Fort', description: 'Majestic hilltop fort with mirror palace', rating: 4.6, category: 'landmark' },
+        { name: 'Hawa Mahal', description: 'Iconic Palace of Winds façade', rating: 4.5, category: 'landmark' },
+        { name: 'City Palace', description: 'Royal palace complex with museums', rating: 4.5, category: 'museum' },
+        { name: 'Jantar Mantar', description: 'Ancient astronomical observatory', rating: 4.3, category: 'museum' },
+      ],
+      restaurants: [
+        { name: 'Suvarna Mahal', cuisine: 'Rajasthani', priceRange: '$$$', rating: 4.6 },
+        { name: 'Lassiwala', cuisine: 'Street Food', priceRange: '$', rating: 4.4 },
+      ],
+      hotels: [
+        { name: 'Rambagh Palace', type: 'luxury', pricePerNight: 350, rating: 4.8, amenities: ['Spa', 'Pool', 'Palace Grounds'] },
+        { name: 'Alsisar Haveli', type: 'mid-range', pricePerNight: 70, rating: 4.2, amenities: ['Pool', 'Restaurant', 'Heritage'] },
+      ],
+      travelTips: ['Visit Amber Fort by jeep or elephant', 'Shop for textiles and jewelry in the old city', 'Try authentic dal baati churma'],
+      weather: { temperature: '25°C avg', condition: 'Arid', humidity: '50%' },
+    },
+  ],
+  'United Arab Emirates': [
+    {
+      name: 'Dubai', isCapital: false, isPopular: true, isPremium: false,
+      description: 'A futuristic desert metropolis where architectural marvels like the Burj Khalifa, luxury shopping, and world-class entertainment create an ultra-modern Arabian experience.',
+      coordinates: { lat: 25.2048, lng: 55.2708 },
+      estimatedBudget: { min: 1500, max: 8000, currency: 'AED' },
+      bestTimeToVisit: 'November-March',
+      attractions: [
+        { name: 'Burj Khalifa', description: 'World\'s tallest building', rating: 4.8, category: 'landmark' },
+        { name: 'Palm Jumeirah', description: 'Artificial archipelago with luxury resorts', rating: 4.6, category: 'landmark' },
+        { name: 'Dubai Mall', description: 'One of the world\'s largest shopping malls', rating: 4.7, category: 'shopping' },
+        { name: 'Desert Safari', description: 'Dune bashing, camel rides, and BBQ dinner', rating: 4.5, category: 'nature' },
+        { name: 'Dubai Marina', description: 'Waterfront district with promenade and dining', rating: 4.5, category: 'landmark' },
+      ],
+      restaurants: [
+        { name: 'At.mosphere', cuisine: 'International', priceRange: '$$$$', rating: 4.8 },
+        { name: 'Al Mahara', cuisine: 'Seafood', priceRange: '$$$$', rating: 4.7 },
+        { name: 'Al Mallah', cuisine: 'Lebanese', priceRange: '$', rating: 4.4 },
+      ],
+      hotels: [
+        { name: 'Burj Al Arab', type: 'luxury', pricePerNight: 1000, rating: 4.9, amenities: ['Private Beach', 'Helipad', 'Butler Service'] },
+        { name: 'Atlantis The Palm', type: 'luxury', pricePerNight: 350, rating: 4.6, amenities: ['Aquarium', 'Water Park', 'Beach'] },
+        { name: 'Rove Downtown', type: 'mid-range', pricePerNight: 100, rating: 4.3, amenities: ['Pool', 'Free WiFi', 'Burj View'] },
+      ],
+      travelTips: ['Visit during winter months for pleasant weather', 'Book Burj Khalifa tickets in advance', 'Respect local customs and dress codes'],
+      weather: { temperature: '28°C avg', condition: 'Arid desert', humidity: '65%' },
+    },
+    {
+      name: 'Abu Dhabi', isCapital: true, isPopular: false, isPremium: false,
+      description: 'The elegant Emirati capital, home to the stunning Sheikh Zayed Grand Mosque, Ferrari World, and beautiful mangrove forests along the Arabian Gulf.',
+      coordinates: { lat: 24.4539, lng: 54.3773 },
+      estimatedBudget: { min: 1200, max: 6000, currency: 'AED' },
+      bestTimeToVisit: 'November-March',
+      attractions: [
+        { name: 'Sheikh Zayed Grand Mosque', description: 'Breathtaking white marble mosque', rating: 4.9, category: 'landmark' },
+        { name: 'Ferrari World', description: 'Indoor theme park with world\'s fastest roller coaster', rating: 4.5, category: 'other' },
+        { name: 'Louvre Abu Dhabi', description: 'Spectacular art museum with floating dome', rating: 4.7, category: 'museum' },
+        { name: 'Yas Island', description: 'Entertainment island with theme parks', rating: 4.4, category: 'other' },
+      ],
+      restaurants: [
+        { name: 'Hakkasan Abu Dhabi', cuisine: 'Chinese', priceRange: '$$$$', rating: 4.6 },
+        { name: 'Al Fanar Restaurant', cuisine: 'Emirati', priceRange: '$$', rating: 4.4 },
+      ],
+      hotels: [
+        { name: 'Emirates Palace', type: 'luxury', pricePerNight: 600, rating: 4.8, amenities: ['Private Beach', 'Spa', 'Gold ATM'] },
+        { name: 'Yas Island Rotana', type: 'mid-range', pricePerNight: 120, rating: 4.3, amenities: ['Pool', 'Free WiFi', 'Theme Park Access'] },
+      ],
+      travelTips: ['Visit the Grand Mosque at sunset for stunning photos', 'Friday brunch is a local institution', 'Explore the Corniche for beautiful waterfront views'],
+      weather: { temperature: '28°C avg', condition: 'Arid desert', humidity: '68%' },
+    },
+  ],
+
+  // ========== PREMIUM COUNTRIES ==========
+  Switzerland: [
+    {
+      name: 'Zurich', isCapital: false, isPopular: true, isPremium: true,
+      description: 'Switzerland\'s largest city combines a charming old town with a stunning lake and Alps backdrop, world-class museums, and a vibrant financial district.',
+      coordinates: { lat: 47.3769, lng: 8.5417 },
+      estimatedBudget: { min: 2500, max: 8000, currency: 'CHF' },
+      bestTimeToVisit: 'May-September',
+      attractions: [
+        { name: 'Old Town', description: 'Medieval streets with picturesque buildings', rating: 4.6, category: 'landmark' },
+        { name: 'Lake Zurich', description: 'Pristine lake with boat cruises and swimming', rating: 4.7, category: 'nature' },
+        { name: 'Kunsthaus Zurich', description: 'One of Switzerland\'s most important art museums', rating: 4.5, category: 'museum' },
+        { name: 'Uetliberg Mountain', description: 'Mountain with panoramic views of the Alps', rating: 4.6, category: 'nature' },
+      ],
+      restaurants: [
+        { name: 'Kronenhalle', cuisine: 'Swiss', priceRange: '$$$$', rating: 4.7 },
+        { name: 'Zeughauskeller', cuisine: 'Swiss', priceRange: '$$', rating: 4.4 },
+      ],
+      hotels: [
+        { name: 'The Dolder Grand', type: 'luxury', pricePerNight: 550, rating: 4.8, amenities: ['Spa', 'Pool', 'Alps View'] },
+        { name: 'Hotel Schweizerhof', type: 'mid-range', pricePerNight: 180, rating: 4.3, amenities: ['Free WiFi', 'Spa', 'Central'] },
+      ],
+      travelTips: ['Use the Zurich Card for free transport and museum discounts', 'Swim in the lake at the many public bathhouses'],
+      weather: { temperature: '9°C avg', condition: 'Continental', humidity: '75%' },
+    },
+    {
+      name: 'Geneva', isCapital: false, isPopular: false, isPremium: true,
+      description: 'A global diplomatic hub on the shores of Lake Geneva, known for its Red Cross headquarters, Jet d\'Eau fountain, and breathtaking Alpine views.',
+      coordinates: { lat: 46.2044, lng: 6.1432 },
+      estimatedBudget: { min: 2200, max: 7500, currency: 'CHF' },
+      bestTimeToVisit: 'May-September',
+      attractions: [
+        { name: 'Jet d\'Eau', description: 'Iconic 140-meter water fountain', rating: 4.5, category: 'landmark' },
+        { name: 'Old Town', description: 'Historic quarter with St. Pierre Cathedral', rating: 4.5, category: 'landmark' },
+        { name: 'CERN', description: 'World\'s largest particle physics laboratory', rating: 4.6, category: 'museum' },
+      ],
+      restaurants: [
+        { name: 'Bayview', cuisine: 'French', priceRange: '$$$$', rating: 4.7 },
+        { name: 'Café du Soleil', cuisine: 'Swiss', priceRange: '$$', rating: 4.3 },
+      ],
+      hotels: [
+        { name: 'Four Seasons Geneva', type: 'luxury', pricePerNight: 500, rating: 4.7, amenities: ['Spa', 'Pool', 'Lake View'] },
+        { name: 'Hotel Cornavin', type: 'mid-range', pricePerNight: 140, rating: 4.1, amenities: ['Free WiFi', 'Central Location'] },
+      ],
+      travelTips: ['Visit the United Nations for a guided tour', 'Take a boat cruise on Lake Geneva'],
+      weather: { temperature: '10°C avg', condition: 'Continental', humidity: '72%' },
+    },
+    {
+      name: 'Interlaken', isCapital: false, isPopular: true, isPremium: true,
+      description: 'The adventure capital of Switzerland, nestled between Lake Thun and Lake Brienz with dramatic views of the Eiger, Mönch, and Jungfrau mountains.',
+      coordinates: { lat: 46.6863, lng: 7.8632 },
+      estimatedBudget: { min: 2000, max: 7000, currency: 'CHF' },
+      bestTimeToVisit: 'June-September (hiking) / December-March (ski)',
+      attractions: [
+        { name: 'Jungfraujoch', description: 'Top of Europe - highest railway station in Europe', rating: 4.8, category: 'landmark' },
+        { name: 'Harder Kulm', description: 'Viewpoint with panoramic views of the Jungfrau region', rating: 4.7, category: 'nature' },
+        { name: 'Schilthorn', description: 'Mountain peak with revolving restaurant and James Bond exhibit', rating: 4.6, category: 'nature' },
+        { name: 'Lake Brienz', description: 'Turquoise lake with stunning turquoise waters', rating: 4.7, category: 'nature' },
+      ],
+      restaurants: [
+        { name: 'Restaurant Schuh', cuisine: 'Swiss', priceRange: '$$$', rating: 4.5 },
+        { name: 'Hüsi Bierhaus', cuisine: 'Swiss', priceRange: '$$', rating: 4.3 },
+      ],
+      hotels: [
+        { name: 'Victoria Jungfrau Grand Hotel', type: 'luxury', pricePerNight: 450, rating: 4.7, amenities: ['Spa', 'Pool', 'Mountain View'] },
+        { name: 'Hotel Interlaken', type: 'mid-range', pricePerNight: 120, rating: 4.2, amenities: ['Free WiFi', 'Garden', 'Restaurant'] },
+      ],
+      travelTips: ['Book Jungfraujoch tickets online for discount', 'Paragliding over Interlaken is unforgettable', 'Stay at least 3 days to explore the region'],
+      weather: { temperature: '8°C avg', condition: 'Alpine', humidity: '78%' },
+    },
+  ],
+  Greece: [
+    {
+      name: 'Athens', isCapital: true, isPopular: true, isPremium: true,
+      description: 'The birthplace of democracy and Western civilization, where the Acropolis stands proud over a sprawling metropolis blending ancient ruins with modern Greek life.',
+      coordinates: { lat: 37.9838, lng: 23.7275 },
+      estimatedBudget: { min: 800, max: 3000, currency: 'EUR' },
+      bestTimeToVisit: 'March-May & September-November',
+      attractions: [
+        { name: 'Acropolis', description: 'Ancient citadel with the Parthenon', rating: 4.8, category: 'landmark' },
+        { name: 'Plaka District', description: 'Charming old neighborhood with narrow streets', rating: 4.5, category: 'landmark' },
+        { name: 'Acropolis Museum', description: 'Modern museum with Parthenon artifacts', rating: 4.7, category: 'museum' },
+        { name: 'Mount Lycabettus', description: 'Hill with panoramic views of the city', rating: 4.5, category: 'nature' },
+        { name: 'Monastiraki Flea Market', description: 'Busy flea market with antiques and souvenirs', rating: 4.3, category: 'shopping' },
+      ],
+      restaurants: [
+        { name: 'Varoulko Seaside', cuisine: 'Seafood', priceRange: '$$$$', rating: 4.6 },
+        { name: 'Taverna tou Psiri', cuisine: 'Greek', priceRange: '$$', rating: 4.4 },
+        { name: 'O Thanasis', cuisine: 'Greek Street Food', priceRange: '$', rating: 4.5 },
+      ],
+      hotels: [
+        { name: 'Hotel Grande Bretagne', type: 'luxury', pricePerNight: 350, rating: 4.7, amenities: ['Spa', 'Pool', 'Acropolis View'] },
+        { name: 'AthensWas Hotel', type: 'mid-range', pricePerNight: 140, rating: 4.4, amenities: ['Rooftop Bar', 'Free WiFi', 'Museum View'] },
+      ],
+      travelTips: ['Visit the Acropolis early morning to avoid heat', 'Explore the Plaka neighborhood for authentic Greek food', 'Take a day trip to Cape Sounion for sunset at Temple of Poseidon'],
+      weather: { temperature: '18°C avg', condition: 'Mediterranean', humidity: '65%' },
+    },
+    {
+      name: 'Santorini', isCapital: false, isPopular: true, isPremium: true,
+      description: 'A breathtaking Cycladic island of white-washed buildings, blue-domed churches, dramatic caldera views, and unforgettable sunsets over the Aegean Sea.',
+      coordinates: { lat: 36.3932, lng: 25.4615 },
+      estimatedBudget: { min: 1500, max: 5000, currency: 'EUR' },
+      bestTimeToVisit: 'June-September',
+      attractions: [
+        { name: 'Oia Village', description: 'Iconic sunset viewpoint with blue domes', rating: 4.8, category: 'landmark' },
+        { name: 'Red Beach', description: 'Stunning red volcanic sand beach', rating: 4.5, category: 'nature' },
+        { name: 'Ancient Thera', description: 'Archaeological site atop Mesa Vouno', rating: 4.4, category: 'museum' },
+        { name: 'Fira Town', description: 'Capital with caldera views and boutiques', rating: 4.5, category: 'landmark' },
+      ],
+      restaurants: [
+        { name: 'Mesa Horio', cuisine: 'Greek', priceRange: '$$$', rating: 4.6 },
+        { name: 'Metaxi Mas', cuisine: 'Greek', priceRange: '$$', rating: 4.5 },
+      ],
+      hotels: [
+        { name: 'Canaves Oia Suites', type: 'luxury', pricePerNight: 600, rating: 4.8, amenities: ['Infinity Pool', 'Caldera View', 'Spa'] },
+        { name: 'Aenaon Villas', type: 'mid-range', pricePerNight: 200, rating: 4.5, amenities: ['Free WiFi', 'Pool', 'Caldera View'] },
+      ],
+      travelTips: ['Book accommodation months in advance', 'Rent an ATV for island exploration', 'Take a sunset catamaran cruise'],
+      weather: { temperature: '19°C avg', condition: 'Mediterranean', humidity: '70%' },
+    },
+    {
+      name: 'Mykonos', isCapital: false, isPopular: true, isPremium: true,
+      description: 'The glamorous island of the Cyclades, famous for its whitewashed streets, iconic windmills, vibrant nightlife, and beautiful golden beaches.',
+      coordinates: { lat: 37.4467, lng: 25.3289 },
+      estimatedBudget: { min: 1500, max: 6000, currency: 'EUR' },
+      bestTimeToVisit: 'June-September',
+      attractions: [
+        { name: 'Mykonos Windmills', description: 'Iconic 16th-century windmills at sunset', rating: 4.6, category: 'landmark' },
+        { name: 'Little Venice', description: 'Picturesque waterfront with colorful houses', rating: 4.6, category: 'landmark' },
+        { name: 'Paradise Beach', description: 'Famous beach with beach clubs', rating: 4.4, category: 'nature' },
+        { name: 'Delos Island', description: 'UNESCO-listed archaeological island', rating: 4.7, category: 'museum' },
+      ],
+      restaurants: [
+        { name: 'Interni', cuisine: 'International', priceRange: '$$$$', rating: 4.6 },
+        { name: 'Kostas Taverna', cuisine: 'Greek', priceRange: '$$', rating: 4.4 },
+      ],
+      hotels: [
+        { name: 'Cavo Tagoo', type: 'luxury', pricePerNight: 700, rating: 4.8, amenities: ['Infinity Pool', 'Spa', 'Sunset View'] },
+        { name: 'Mykonos Bay Hotel', type: 'mid-range', pricePerNight: 180, rating: 4.3, amenities: ['Pool', 'Beach Access', 'Free WiFi'] },
+      ],
+      travelTips: ['Visit Delos island for incredible ancient ruins', 'Book beach club tables in peak season', 'Rent an ATV or scooter to explore the island'],
+      weather: { temperature: '20°C avg', condition: 'Mediterranean', humidity: '68%' },
+    },
+  ],
+  Maldives: [
+    {
+      name: 'Male', isCapital: true, isPopular: true, isPremium: true,
+      description: 'The vibrant capital of the Maldives, where colorful buildings, bustling fish markets, and centuries-old mosques create an authentic Maldivian experience.',
+      coordinates: { lat: 4.1755, lng: 73.5093 },
+      estimatedBudget: { min: 2000, max: 8000, currency: 'MVR' },
+      bestTimeToVisit: 'November-April',
+      attractions: [
+        { name: 'Male Fish Market', description: 'Vibrant market with fresh catch auctions', rating: 4.3, category: 'food' },
+        { name: 'Hukuru Miskiy', description: 'Historic mosque with intricate coral stone carvings', rating: 4.4, category: 'landmark' },
+        { name: 'Artificial Beach', description: 'Man-made beach for swimming and relaxation', rating: 4.1, category: 'nature' },
+        { name: 'National Museum', description: 'Museum displaying Maldivian history and artifacts', rating: 4.2, category: 'museum' },
+      ],
+      restaurants: [
+        { name: 'Ithaa Undersea Restaurant', cuisine: 'International', priceRange: '$$$$', rating: 4.7 },
+        { name: 'Seagull Café', cuisine: 'Maldivian', priceRange: '$$', rating: 4.2 },
+      ],
+      hotels: [
+        { name: 'Soneva Jani', type: 'luxury', pricePerNight: 1500, rating: 4.9, amenities: ['Overwater Villa', 'Private Pool', 'Cinema'] },
+        { name: 'Adaaran Prestige', type: 'luxury', pricePerNight: 500, rating: 4.6, amenities: ['Water Villa', 'Spa', 'All Inclusive'] },
+      ],
+      travelTips: ['Choose all-inclusive resorts for best value', 'Pack reef-safe sunscreen to protect coral', 'US Dollars are widely accepted'],
+      weather: { temperature: '28°C avg', condition: 'Tropical monsoon', humidity: '82%' },
+    },
+  ],
+  Iceland: [
+    {
+      name: 'Reykjavik', isCapital: true, isPopular: true, isPremium: true,
+      description: 'The world\'s northernmost capital, a colorful city of geothermal pools, vibrant street art, cozy coffee shops, and a gateway to Iceland\'s otherworldly landscapes.',
+      coordinates: { lat: 64.1466, lng: -21.9426 },
+      estimatedBudget: { min: 2500, max: 8000, currency: 'ISK' },
+      bestTimeToVisit: 'June-August (summer) / September-March (Aurora)',
+      attractions: [
+        { name: 'Blue Lagoon', description: 'Iconic geothermal spa in lava fields', rating: 4.6, category: 'nature' },
+        { name: 'Hallgrímskirkja', description: 'Striking Lutheran church with tower views', rating: 4.5, category: 'landmark' },
+        { name: 'Golden Circle', description: 'Thingvellir, Gullfoss, and Geysir route', rating: 4.8, category: 'nature' },
+        { name: 'Northern Lights', description: 'Aurora Borealis visible in winter months', rating: 4.9, category: 'nature' },
+        { name: 'Jökulsárlón Glacier Lagoon', description: 'Glacial lagoon with floating icebergs', rating: 4.9, category: 'nature' },
+      ],
+      restaurants: [
+        { name: 'Dill Restaurant', cuisine: 'Nordic', priceRange: '$$$$', rating: 4.7 },
+        { name: 'Bæjarins Beztu Pylsur', cuisine: 'Icelandic Hot Dogs', priceRange: '$', rating: 4.5 },
+        { name: 'Fish Market', cuisine: 'Seafood', priceRange: '$$$', rating: 4.6 },
+      ],
+      hotels: [
+        { name: 'Hotel Borg', type: 'luxury', pricePerNight: 350, rating: 4.6, amenities: ['Spa', 'Restaurant', 'Central Location'] },
+        { name: 'Kex Hostel', type: 'budget', pricePerNight: 60, rating: 4.2, amenities: ['Bar', 'Social Area', 'Free WiFi'] },
+      ],
+      travelTips: ['Rent a 4x4 for the Ring Road', 'Pack thermal layers and rain gear', 'Book Blue Lagoon tickets far ahead'],
+      weather: { temperature: '5°C avg', condition: 'Subarctic oceanic', humidity: '80%' },
+    },
+  ],
+  'New Zealand': [
+    {
+      name: 'Auckland', isCapital: false, isPopular: true, isPremium: true,
+      description: 'The City of Sails, built on 48 volcanic cones and surrounded by two stunning harbors, offering a perfect blend of urban sophistication and outdoor adventure.',
+      coordinates: { lat: -36.8485, lng: 174.7633 },
+      estimatedBudget: { min: 2000, max: 6500, currency: 'NZD' },
+      bestTimeToVisit: 'December-February',
+      attractions: [
+        { name: 'Sky Tower', description: 'Tallest freestanding structure in Southern Hemisphere', rating: 4.5, category: 'landmark' },
+        { name: 'Waiheke Island', description: 'Island paradise with vineyards and beaches', rating: 4.6, category: 'nature' },
+        { name: 'Rangitoto Island', description: 'Volcanic island with hiking trail to summit', rating: 4.5, category: 'nature' },
+        { name: 'Auckland Domain', description: 'City\'s oldest park with wintergardens', rating: 4.3, category: 'nature' },
+      ],
+      restaurants: [
+        { name: 'The Grove', cuisine: 'Modern NZ', priceRange: '$$$$', rating: 4.6 },
+        { name: 'Depot Eatery', cuisine: 'Kiwi', priceRange: '$$', rating: 4.5 },
+      ],
+      hotels: [
+        { name: 'The Hotel Britomart', type: 'luxury', pricePerNight: 350, rating: 4.6, amenities: ['Free WiFi', 'Restaurant', 'Harbour View'] },
+        { name: 'Mövenpick Hotel Auckland', type: 'mid-range', pricePerNight: 150, rating: 4.3, amenities: ['Pool', 'Free WiFi', 'Restaurant'] },
+      ],
+      travelTips: ['Take a ferry to Waiheke Island for wine tasting', 'Visit the Auckland War Memorial Museum', 'Climb Mount Eden for panoramic city views'],
+      weather: { temperature: '15°C avg', condition: 'Subtropical maritime', humidity: '78%' },
+    },
+    {
+      name: 'Queenstown', isCapital: false, isPopular: true, isPremium: true,
+      description: 'The adventure capital of the world, set on the shores of Lake Wakatipu with dramatic mountain backdrops - home to bungee jumping, skiing, and breathtaking Fiordland scenery.',
+      coordinates: { lat: -45.0312, lng: 168.6626 },
+      estimatedBudget: { min: 2000, max: 7000, currency: 'NZD' },
+      bestTimeToVisit: 'December-February (summer) / June-August (ski)',
+      attractions: [
+        { name: 'Milford Sound', description: 'Majestic fiord with waterfalls and dolphins', rating: 4.9, category: 'nature' },
+        { name: 'Skyline Gondola', description: 'Gondola ride with lake and mountain views', rating: 4.6, category: 'landmark' },
+        { name: 'Shotover River', description: 'Thrilling jet boat rides through canyons', rating: 4.7, category: 'other' },
+        { name: 'Bungee Jumping', description: 'Home of the original bungee jump at Kawarau Bridge', rating: 4.5, category: 'other' },
+      ],
+      restaurants: [
+        { name: 'Rātā Cuisine', cuisine: 'Modern NZ', priceRange: '$$$', rating: 4.6 },
+        { name: 'Fergburger', cuisine: 'Burgers', priceRange: '$', rating: 4.5 },
+      ],
+      hotels: [
+        { name: 'Eichardt\'s Private Hotel', type: 'luxury', pricePerNight: 500, rating: 4.8, amenities: ['Lake View', 'Spa', 'Fine Dining'] },
+        { name: 'QT Queenstown', type: 'mid-range', pricePerNight: 180, rating: 4.4, amenities: ['Pool', 'Free WiFi', 'Lake View'] },
+      ],
+      travelTips: ['Try bungee jumping at the original Kawarau Bridge', 'Book Milford Sound cruise in advance', 'Rent a car to explore the region freely'],
+      weather: { temperature: '10°C avg', condition: 'Temperate oceanic', humidity: '75%' },
+    },
+    {
+      name: 'Wellington', isCapital: true, isPopular: false, isPremium: true,
+      description: 'New Zealand\'s cultural capital, nestled between a stunning harbour and rolling green hills, famous for its vibrant arts scene, craft beer, and the iconic Te Papa museum.',
+      coordinates: { lat: -41.2865, lng: 174.7762 },
+      estimatedBudget: { min: 1500, max: 5000, currency: 'NZD' },
+      bestTimeToVisit: 'December-March',
+      attractions: [
+        { name: 'Te Papa Museum', description: 'National museum of New Zealand', rating: 4.7, category: 'museum' },
+        { name: 'Wellington Cable Car', description: 'Historic cable car to botanical gardens', rating: 4.4, category: 'landmark' },
+        { name: 'Mount Victoria', description: 'Lookout with panoramic views of the city and harbour', rating: 4.5, category: 'nature' },
+        { name: 'Weta Workshop', description: 'Film effects studio behind Lord of the Rings', rating: 4.6, category: 'other' },
+      ],
+      restaurants: [
+        { name: 'Logan Brown', cuisine: 'Modern NZ', priceRange: '$$$', rating: 4.6 },
+        { name: 'Ortega Fish Shack', cuisine: 'Seafood', priceRange: '$$', rating: 4.4 },
+      ],
+      hotels: [
+        { name: 'InterContinental Wellington', type: 'luxury', pricePerNight: 280, rating: 4.5, amenities: ['Spa', 'Pool', 'Restaurant'] },
+        { name: 'QT Wellington', type: 'mid-range', pricePerNight: 140, rating: 4.3, amenities: ['Art Gallery', 'Free WiFi', 'Restaurant'] },
+      ],
+      travelTips: ['Visit Te Papa for free entry to incredible exhibits', 'Take the cable car to the botanical gardens', 'Explore Cuba Street for vintage shops and cafés'],
+      weather: { temperature: '12°C avg', condition: 'Temperate maritime', humidity: '80%' },
+    },
+  ],
+  Peru: [
+    {
+      name: 'Lima', isCapital: true, isPopular: true, isPremium: true,
+      description: 'Peru\'s sprawling capital, where colonial architecture meets world-class gastronomy, cliffside views of the Pacific Ocean, and vibrant neighborhoods full of history.',
+      coordinates: { lat: -12.0464, lng: -77.0428 },
+      estimatedBudget: { min: 600, max: 2500, currency: 'PEN' },
+      bestTimeToVisit: 'December-April',
+      attractions: [
+        { name: 'Miraflores', description: 'Trendy coastal district with parks and restaurants', rating: 4.5, category: 'landmark' },
+        { name: 'Historic Centre', description: 'UNESCO-listed colonial center with Plaza Mayor', rating: 4.5, category: 'landmark' },
+        { name: 'Larco Museum', description: 'Museum of pre-Columbian art and artifacts', rating: 4.6, category: 'museum' },
+        { name: 'Barranco', description: 'Bohemian district with street art and nightlife', rating: 4.4, category: 'nightlife' },
+      ],
+      restaurants: [
+        { name: 'Central', description: 'Best Restaurant in Latin America', cuisine: 'Peruvian', priceRange: '$$$$', rating: 4.9 },
+        { name: 'Astrid y Gastón', cuisine: 'Peruvian', priceRange: '$$$$', rating: 4.7 },
+        { name: 'Cevichería La Mar', cuisine: 'Seafood', priceRange: '$$$', rating: 4.6 },
+      ],
+      hotels: [
+        { name: 'Belmond Miraflores Park', type: 'luxury', pricePerNight: 300, rating: 4.6, amenities: ['Spa', 'Pool', 'Ocean View'] },
+        { name: 'Hotel B', type: 'mid-range', pricePerNight: 120, rating: 4.4, amenities: ['Free WiFi', 'Restaurant', 'Art Gallery'] },
+      ],
+      travelTips: ['Try ceviche in Lima - it\'s Peru\'s signature dish', 'Take a food tour to experience Lima\'s culinary scene', 'Visit the Larco Museum for incredible pre-Columbian artifacts'],
+      weather: { temperature: '19°C avg', condition: 'Subtropical desert', humidity: '82%' },
+    },
+    {
+      name: 'Cusco', isCapital: false, isPopular: true, isPremium: true,
+      description: 'The ancient Inca capital, high in the Andes, where cobblestone streets wind through Spanish colonial buildings built on Incan foundations, gateway to Machu Picchu.',
+      coordinates: { lat: -13.5320, lng: -71.9675 },
+      estimatedBudget: { min: 500, max: 2000, currency: 'PEN' },
+      bestTimeToVisit: 'May-September',
+      attractions: [
+        { name: 'Machu Picchu', description: 'Iconic Inca citadel in the clouds', rating: 4.9, category: 'landmark' },
+        { name: 'Sacred Valley', description: 'Andean valley with Inca ruins and markets', rating: 4.7, category: 'nature' },
+        { name: 'Plaza de Armas', description: 'Main square with cathedral and beautiful architecture', rating: 4.5, category: 'landmark' },
+        { name: 'Sacsayhuamán', description: 'Massive Inca stone fortress overlooking Cusco', rating: 4.6, category: 'landmark' },
+        { name: 'Rainbow Mountain', description: 'Colorful striped mountain at high altitude', rating: 4.7, category: 'nature' },
+      ],
+      restaurants: [
+        { name: 'Cicciolina', cuisine: 'Peruvian Fusion', priceRange: '$$$', rating: 4.6 },
+        { name: 'Morena Peruvian Kitchen', cuisine: 'Peruvian', priceRange: '$$', rating: 4.5 },
+        { name: 'San Pedro Market', cuisine: 'Local', priceRange: '$', rating: 4.3 },
+      ],
+      hotels: [
+        { name: 'Belmond Hotel Monasterio', type: 'luxury', pricePerNight: 350, rating: 4.7, amenities: ['Colonial Architecture', 'Spa', 'Courtyard'] },
+        { name: 'Tambo del Inka', type: 'mid-range', pricePerNight: 120, rating: 4.3, amenities: ['Free WiFi', 'Restaurant', 'Sacred Valley View'] },
+      ],
+      travelTips: ['Book Machu Picchu tickets months in advance', 'Acclimatize to altitude in Cusco for 1-2 days', 'Drink coca tea to help with altitude sickness'],
+      weather: { temperature: '12°C avg', condition: 'Highland subtropical', humidity: '60%' },
+    },
+  ],
+  'South Africa': [
+    {
+      name: 'Cape Town', isCapital: false, isPopular: true, isPremium: true,
+      description: 'Where the Atlantic meets the Indian Ocean, Cape Town dazzles with its flat-topped Table Mountain, stunning coastline, vibrant food scene, and rich multicultural history.',
+      coordinates: { lat: -33.9249, lng: 18.4241 },
+      estimatedBudget: { min: 800, max: 3000, currency: 'ZAR' },
+      bestTimeToVisit: 'November-March',
+      attractions: [
+        { name: 'Table Mountain', description: 'Iconic flat-topped mountain landmark', rating: 4.8, category: 'nature' },
+        { name: 'Boulders Beach', description: 'Penguin colony with pristine beach', rating: 4.6, category: 'nature' },
+        { name: 'V&A Waterfront', description: 'Harbor-side shopping and dining hub', rating: 4.5, category: 'shopping' },
+        { name: 'Cape of Good Hope', description: 'Scenic tip of the Cape Peninsula', rating: 4.7, category: 'nature' },
+        { name: 'Robben Island', description: 'Historic prison island where Mandela was held', rating: 4.6, category: 'museum' },
+      ],
+      restaurants: [
+        { name: 'The Test Kitchen', cuisine: 'Modern South African', priceRange: '$$$$', rating: 4.8 },
+        { name: 'The Pot Luck Club', cuisine: 'Tapas', priceRange: '$$$', rating: 4.6 },
+        { name: 'Mama Africa', cuisine: 'African', priceRange: '$$', rating: 4.3 },
+      ],
+      hotels: [
+        { name: 'Belmond Mount Nelson', type: 'luxury', pricePerNight: 350, rating: 4.7, amenities: ['Spa', 'Pool', 'Garden Estate'] },
+        { name: 'The Silo Hotel', type: 'luxury', pricePerNight: 500, rating: 4.8, amenities: ['Rooftop Pool', 'Spa', 'Harbour View'] },
+        { name: 'Never@Home', type: 'budget', pricePerNight: 30, rating: 4.1, amenities: ['Free WiFi', 'Breakfast', 'Social Events'] },
+      ],
+      travelTips: ['Take the cable car up Table Mountain', 'Drive Chapman\'s Peak for stunning coastal scenery', 'Sample local wines in nearby Stellenbosch'],
+      weather: { temperature: '17°C avg', condition: 'Mediterranean', humidity: '75%' },
+    },
+    {
+      name: 'Johannesburg', isCapital: false, isPopular: false, isPremium: true,
+      description: 'South Africa\'s largest city and economic powerhouse, a place of vibrant energy, rich history, thriving arts scene, and gateway to Kruger National Park safaris.',
+      coordinates: { lat: -26.2041, lng: 28.0473 },
+      estimatedBudget: { min: 600, max: 2500, currency: 'ZAR' },
+      bestTimeToVisit: 'May-September',
+      attractions: [
+        { name: 'Apartheid Museum', description: 'Powerful museum on South Africa\'s history', rating: 4.7, category: 'museum' },
+        { name: 'Soweto', description: 'Historic township with Mandela Museum', rating: 4.6, category: 'landmark' },
+        { name: 'Kruger National Park', description: 'World-famous safari destination', rating: 4.8, category: 'nature' },
+        { name: 'Maboneng Precinct', description: 'Trendy arts and culture district', rating: 4.4, category: 'landmark' },
+      ],
+      restaurants: [
+        { name: 'DW Eleven-13', cuisine: 'Modern South African', priceRange: '$$$$', rating: 4.7 },
+        { name: 'Proud Mary', cuisine: 'South African', priceRange: '$$', rating: 4.4 },
+      ],
+      hotels: [
+        { name: 'Saxon Hotel & Spa', type: 'luxury', pricePerNight: 300, rating: 4.7, amenities: ['Spa', 'Pool', 'Restaurant'] },
+        { name: 'Holiday Inn Rosebank', type: 'mid-range', pricePerNight: 80, rating: 4.1, amenities: ['Pool', 'Free WiFi', 'Restaurant'] },
+      ],
+      travelTips: ['Visit the Apartheid Museum for a profound experience', 'Take a Soweto tour with a local guide', 'Use ride-sharing apps for safe transportation'],
+      weather: { temperature: '16°C avg', condition: 'Subtropical highland', humidity: '65%' },
+    },
+    {
+      name: 'Durban', isCapital: false, isPopular: false, isPremium: true,
+      description: 'South Africa\'s sunny beach paradise with a unique Indian-African fusion culture, famous for its warm Indian Ocean waters and world-class surfing.',
+      coordinates: { lat: -29.8587, lng: 31.0218 },
+      estimatedBudget: { min: 500, max: 2000, currency: 'ZAR' },
+      bestTimeToVisit: 'May-September',
+      attractions: [
+        { name: 'uShaka Marine World', description: 'World-class aquarium and water park', rating: 4.4, category: 'other' },
+        { name: 'Golden Mile', description: 'Iconic beachfront promenade', rating: 4.3, category: 'nature' },
+        { name: 'Moses Mabhida Stadium', description: 'Stadium with skycar and arch walk', rating: 4.4, category: 'landmark' },
+      ],
+      restaurants: [
+        { name: 'The Grill Room', cuisine: 'South African', priceRange: '$$$', rating: 4.5 },
+        { name: 'Bunny Chow', cuisine: 'Indian', priceRange: '$', rating: 4.3 },
+      ],
+      hotels: [
+        { name: 'Beverly Hills Hotel', type: 'luxury', pricePerNight: 200, rating: 4.5, amenities: ['Pool', 'Restaurant', 'Ocean View'] },
+        { name: 'Blue Waters Hotel', type: 'mid-range', pricePerNight: 70, rating: 4.1, amenities: ['Pool', 'Free WiFi', 'Beach Access'] },
+      ],
+      travelTips: ['Try bunny chow - Durban\'s signature dish', 'Visit during summer for perfect beach weather'],
+      weather: { temperature: '21°C avg', condition: 'Humid subtropical', humidity: '80%' },
+    },
+  ],
+  Canada: [
+    {
+      name: 'Toronto', isCapital: false, isPopular: true, isPremium: true,
+      description: 'Canada\'s largest city, a multicultural mosaic with the iconic CN Tower, vibrant neighborhoods, world-class museums, and stunning Lake Ontario waterfront.',
+      coordinates: { lat: 43.6532, lng: -79.3832 },
+      estimatedBudget: { min: 1500, max: 5000, currency: 'CAD' },
+      bestTimeToVisit: 'May-October',
+      attractions: [
+        { name: 'CN Tower', description: 'Iconic telecommunications tower with glass floor', rating: 4.6, category: 'landmark' },
+        { name: 'Royal Ontario Museum', description: 'World-class museum of natural history and culture', rating: 4.6, category: 'museum' },
+        { name: 'Distillery District', description: 'Historic district with galleries and restaurants', rating: 4.5, category: 'landmark' },
+        { name: 'Niagara Falls', description: 'Majestic waterfalls near Toronto', rating: 4.8, category: 'nature' },
+      ],
+      restaurants: [
+        { name: 'Alo Restaurant', cuisine: 'Modern Canadian', priceRange: '$$$$', rating: 4.8 },
+        { name: 'St. Lawrence Market', cuisine: 'Various', priceRange: '$$', rating: 4.6 },
+        { name: 'Pai Northern Thai', cuisine: 'Thai', priceRange: '$$', rating: 4.5 },
+      ],
+      hotels: [
+        { name: 'The Ritz-Carlton Toronto', type: 'luxury', pricePerNight: 400, rating: 4.7, amenities: ['Spa', 'Pool', 'Fine Dining'] },
+        { name: 'The Drake Hotel', type: 'mid-range', pricePerNight: 160, rating: 4.3, amenities: ['Free WiFi', 'Restaurant', 'Art Gallery'] },
+      ],
+      travelTips: ['Visit Niagara Falls as a day trip', 'Explore diverse neighborhoods like Kensington Market', 'Use the TTC subway for efficient travel'],
+      weather: { temperature: '9°C avg', condition: 'Humid continental', humidity: '72%' },
+    },
+    {
+      name: 'Vancouver', isCapital: false, isPopular: true, isPremium: true,
+      description: 'A stunning coastal city where mountains meet the Pacific Ocean, offering outdoor adventures, multicultural dining, and a laid-back West Coast lifestyle.',
+      coordinates: { lat: 49.2827, lng: -123.1207 },
+      estimatedBudget: { min: 1800, max: 6000, currency: 'CAD' },
+      bestTimeToVisit: 'June-September',
+      attractions: [
+        { name: 'Stanley Park', description: 'Vast urban park with seawall and totem poles', rating: 4.8, category: 'nature' },
+        { name: 'Granville Island', description: 'Public market with artisan shops and food', rating: 4.6, category: 'food' },
+        { name: 'Capilano Suspension Bridge', description: 'Scenic bridge through the rainforest canopy', rating: 4.5, category: 'nature' },
+        { name: 'Grouse Mountain', description: 'Mountain with hiking, skiing, and wildlife', rating: 4.5, category: 'nature' },
+        { name: 'Whistler', description: 'World-class ski resort north of Vancouver', rating: 4.7, category: 'nature' },
+      ],
+      restaurants: [
+        { name: 'Hawksworth Restaurant', cuisine: 'Modern Canadian', priceRange: '$$$$', rating: 4.7 },
+        { name: 'Miku', cuisine: 'Japanese', priceRange: '$$$', rating: 4.6 },
+        { name: 'Granville Island Market', cuisine: 'Various', priceRange: '$$', rating: 4.5 },
+      ],
+      hotels: [
+        { name: 'Fairmont Pacific Rim', type: 'luxury', pricePerNight: 450, rating: 4.7, amenities: ['Spa', 'Pool', 'Harbour View'] },
+        { name: 'The Burrard', type: 'mid-range', pricePerNight: 150, rating: 4.3, amenities: ['Free WiFi', 'Bike Rental', 'Coffee Shop'] },
+      ],
+      travelTips: ['Explore Stanley Park by bike', 'Take a day trip to Whistler for mountain activities', 'Visit Granville Island for fresh local food'],
+      weather: { temperature: '10°C avg', condition: 'Oceanic maritime', humidity: '80%' },
+    },
+    {
+      name: 'Montreal', isCapital: false, isPopular: true, isPremium: true,
+      description: 'Canada\'s cultural capital, where French charm meets North American energy, famous for its historic architecture, vibrant festivals, and incredible food scene.',
+      coordinates: { lat: 45.5017, lng: -73.5673 },
+      estimatedBudget: { min: 1000, max: 3500, currency: 'CAD' },
+      bestTimeToVisit: 'May-October',
+      attractions: [
+        { name: 'Old Montreal', description: 'Historic district with cobblestone streets', rating: 4.6, category: 'landmark' },
+        { name: 'Notre-Dame Basilica', description: 'Stunning Gothic Revival church', rating: 4.6, category: 'landmark' },
+        { name: 'Mount Royal Park', description: 'Large park with panoramic city views', rating: 4.6, category: 'nature' },
+        { name: 'Underground City', description: 'Extensive underground shopping complex', rating: 4.2, category: 'shopping' },
+      ],
+      restaurants: [
+        { name: 'Joe Beef', cuisine: 'Canadian', priceRange: '$$$$', rating: 4.7 },
+        { name: 'St. Viateur Bagel', cuisine: 'Montreal Bagels', priceRange: '$', rating: 4.5 },
+        { name: 'Schwartz\'s Deli', cuisine: 'Smoked Meat', priceRange: '$$', rating: 4.6 },
+      ],
+      hotels: [
+        { name: 'Ritz-Carlton Montreal', type: 'luxury', pricePerNight: 400, rating: 4.7, amenities: ['Spa', 'Pool', 'Fine Dining'] },
+        { name: 'Hotel William Grey', type: 'mid-range', pricePerNight: 160, rating: 4.4, amenities: ['Free WiFi', 'Restaurant', 'Rooftop Terrace'] },
+      ],
+      travelTips: ['Try Montreal smoked meat and bagels', 'Visit during the Just for Laughs festival in July', 'Explore Old Montreal on foot'],
+      weather: { temperature: '7°C avg', condition: 'Humid continental', humidity: '75%' },
+    },
+  ],
+  Brazil: [
+    {
+      name: 'Rio de Janeiro', isCapital: false, isPopular: true, isPremium: true,
+      description: 'The Marvelous City, where Christ the Redeemer watches over Sugarloaf Mountain, Copacabana and Ipanema beaches, and the world\'s most vibrant Carnival celebration.',
+      coordinates: { lat: -22.9068, lng: -43.1729 },
+      estimatedBudget: { min: 800, max: 3500, currency: 'BRL' },
+      bestTimeToVisit: 'December-March',
+      attractions: [
+        { name: 'Christ the Redeemer', description: 'Iconic Art Deco statue atop Corcovado Mountain', rating: 4.8, category: 'landmark' },
+        { name: 'Sugarloaf Mountain', description: 'Peak with cable car and panoramic views', rating: 4.7, category: 'landmark' },
+        { name: 'Copacabana Beach', description: 'World-famous beach with promenade', rating: 4.6, category: 'nature' },
+        { name: 'Ipanema Beach', description: 'Trendy beach and neighborhood', rating: 4.6, category: 'nature' },
+        { name: 'Santa Teresa', description: 'Bohemian neighborhood with street art', rating: 4.4, category: 'landmark' },
+      ],
+      restaurants: [
+        { name: 'Oro', cuisine: 'Brazilian', priceRange: '$$$$', rating: 4.7 },
+        { name: 'Confeitaria Colombo', cuisine: 'Brazilian', priceRange: '$$', rating: 4.5 },
+        { name: 'Bar do Mineiro', cuisine: 'Brazilian', priceRange: '$', rating: 4.4 },
+      ],
+      hotels: [
+        { name: 'Belmond Copacabana Palace', type: 'luxury', pricePerNight: 500, rating: 4.8, amenities: ['Spa', 'Pool', 'Beach Access'] },
+        { name: 'Hotel Arpoador', type: 'mid-range', pricePerNight: 120, rating: 4.3, amenities: ['Free WiFi', 'Beach Access', 'Rooftop'] },
+      ],
+      travelTips: ['Take the cog train up to Christ the Redeemer', 'Visit Sugarloaf Mountain at sunset', 'Stay in Copacabana or Ipanema for beach access'],
+      weather: { temperature: '24°C avg', condition: 'Tropical', humidity: '78%' },
+    },
+    {
+      name: 'São Paulo', isCapital: false, isPopular: false, isPremium: true,
+      description: 'The largest city in the Americas, a cultural and economic powerhouse with world-class museums, diverse culinary scene, and a relentless energy that never sleeps.',
+      coordinates: { lat: -23.5505, lng: -46.6333 },
+      estimatedBudget: { min: 800, max: 3000, currency: 'BRL' },
+      bestTimeToVisit: 'April-October',
+      attractions: [
+        { name: 'MASP', description: 'Museum of Art with iconic hanging architecture', rating: 4.6, category: 'museum' },
+        { name: 'Ibirapuera Park', description: 'Urban park with museums and lakes', rating: 4.6, category: 'nature' },
+        { name: 'Paulista Avenue', description: 'Main avenue with shops and culture', rating: 4.4, category: 'shopping' },
+        { name: 'Liberdade District', description: 'Japanese neighborhood with lanterns and markets', rating: 4.3, category: 'landmark' },
+      ],
+      restaurants: [
+        { name: 'D.O.M.', cuisine: 'Brazilian', priceRange: '$$$$', rating: 4.8 },
+        { name: 'Mercado Municipal', cuisine: 'Various', priceRange: '$$', rating: 4.4 },
+      ],
+      hotels: [
+        { name: 'Hotel Unique', type: 'luxury', pricePerNight: 350, rating: 4.6, amenities: ['Rooftop Pool', 'Spa', 'Restaurant'] },
+        { name: 'Norman Hotel', type: 'mid-range', pricePerNight: 100, rating: 4.2, amenities: ['Free WiFi', 'Restaurant', 'Bar'] },
+      ],
+      travelTips: ['Visit the Municipal Market for mortadella sandwiches', 'Explore the street art in Vila Madalena', 'Try a real Brazilian churrascaria'],
+      weather: { temperature: '19°C avg', condition: 'Subtropical', humidity: '75%' },
+    },
+    {
+      name: 'Salvador', isCapital: false, isPopular: false, isPremium: true,
+      description: 'The heart of Afro-Brazilian culture, where colorful colonial buildings, capoeira rhythms, and the best seafood in Brazil create an intoxicating cultural experience.',
+      coordinates: { lat: -12.9714, lng: -38.5014 },
+      estimatedBudget: { min: 500, max: 2000, currency: 'BRL' },
+      bestTimeToVisit: 'September-March',
+      attractions: [
+        { name: 'Pelourinho', description: 'UNESCO-listed colonial historic center', rating: 4.6, category: 'landmark' },
+        { name: 'Elevador Lacerda', description: 'Historic elevator linking upper and lower city', rating: 4.3, category: 'landmark' },
+        { name: 'São Francisco Church', description: 'Opulent Baroque church covered in gold leaf', rating: 4.5, category: 'landmark' },
+        { name: 'Porto da Barra Beach', description: 'Beautiful urban beach', rating: 4.4, category: 'nature' },
+      ],
+      restaurants: [
+        { name: 'Amado', cuisine: 'Brazilian', priceRange: '$$$', rating: 4.5 },
+        { name: 'Yemanjá', cuisine: 'Seafood', priceRange: '$$', rating: 4.4 },
+      ],
+      hotels: [
+        { name: 'Pestana Convento do Carmo', type: 'luxury', pricePerNight: 200, rating: 4.5, amenities: ['Pool', 'Spa', 'Restaurant'] },
+        { name: 'Hotel Casa do Amarelindo', type: 'mid-range', pricePerNight: 80, rating: 4.3, amenities: ['Pool', 'Free WiFi', 'Restaurant'] },
+      ],
+      travelTips: ['Watch a capoeira performance in Pelourinho', 'Try acarajé - a traditional Afro-Brazilian snack', 'Explore the vibrant Mercado Modelo'],
+      weather: { temperature: '26°C avg', condition: 'Tropical rainforest', humidity: '82%' },
+    },
+  ],
+  Egypt: [
+    {
+      name: 'Cairo', isCapital: true, isPopular: true, isPremium: true,
+      description: 'The timeless capital of Egypt, where the Pyramids of Giza stand as ancient wonders against a bustling metropolis of Islamic architecture, vibrant bazaars, and the legendary Nile.',
+      coordinates: { lat: 30.0444, lng: 31.2357 },
+      estimatedBudget: { min: 500, max: 2000, currency: 'EGP' },
+      bestTimeToVisit: 'October-April',
+      attractions: [
+        { name: 'Pyramids of Giza', description: 'Last surviving ancient wonder of the world', rating: 4.8, category: 'landmark' },
+        { name: 'Egyptian Museum', description: 'Museum with Tutankhamun\'s treasures', rating: 4.6, category: 'museum' },
+        { name: 'Khan El Khalili', description: 'Historic bazaar with crafts and jewelry', rating: 4.4, category: 'shopping' },
+        { name: 'Great Sphinx', description: 'Ancient limestone statue with lion\'s body', rating: 4.7, category: 'landmark' },
+        { name: 'Nile River Cruise', description: 'Scenic cruise along the legendary Nile', rating: 4.6, category: 'nature' },
+      ],
+      restaurants: [
+        { name: 'Nubian Village', cuisine: 'Egyptian', priceRange: '$$$', rating: 4.5 },
+        { name: 'Abou El Sid', cuisine: 'Egyptian', priceRange: '$$', rating: 4.4 },
+        { name: 'Felfela', cuisine: 'Egyptian', priceRange: '$', rating: 4.3 },
+      ],
+      hotels: [
+        { name: 'Marriott Mena House', type: 'luxury', pricePerNight: 250, rating: 4.7, amenities: ['Pool', 'Spa', 'Pyramid View'] },
+        { name: 'Steigenberger El Tahrir', type: 'mid-range', pricePerNight: 80, rating: 4.3, amenities: ['Pool', 'Free WiFi', 'Nile View'] },
+      ],
+      travelTips: ['Visit the Pyramids early morning to beat crowds', 'Hire a licensed Egyptologist guide for deeper insight', 'Negotiate prices firmly at Khan El Khalili market'],
+      weather: { temperature: '22°C avg', condition: 'Arid desert', humidity: '55%' },
+    },
+    {
+      name: 'Luxor', isCapital: false, isPopular: true, isPremium: true,
+      description: 'The world\'s greatest open-air museum, home to the Valley of the Kings, Karnak Temple, and magnificent pharaonic monuments along the Nile\'s east and west banks.',
+      coordinates: { lat: 25.6872, lng: 32.6396 },
+      estimatedBudget: { min: 400, max: 1500, currency: 'EGP' },
+      bestTimeToVisit: 'October-April',
+      attractions: [
+        { name: 'Valley of the Kings', description: 'Ancient royal burial ground with Tutankhamun\'s tomb', rating: 4.7, category: 'museum' },
+        { name: 'Karnak Temple', description: 'Massive temple complex dedicated to Amun', rating: 4.7, category: 'landmark' },
+        { name: 'Luxor Temple', description: 'Beautiful temple illuminated at night', rating: 4.6, category: 'landmark' },
+        { name: 'Hatshepsut Temple', description: 'Unique terraced mortuary temple', rating: 4.6, category: 'landmark' },
+        { name: 'Colossi of Memnon', description: 'Massive stone statues of Pharaoh Amenhotep III', rating: 4.3, category: 'landmark' },
+      ],
+      restaurants: [
+        { name: 'Sofra Restaurant', cuisine: 'Egyptian', priceRange: '$$$', rating: 4.6 },
+        { name: 'Al-Sahaby Lane', cuisine: 'Egyptian', priceRange: '$$', rating: 4.4 },
+      ],
+      hotels: [
+        { name: 'Winter Palace Hotel', type: 'luxury', pricePerNight: 200, rating: 4.6, amenities: ['Pool', 'Spa', 'Nile View'] },
+        { name: 'Sofitel Winter Palace', type: 'mid-range', pricePerNight: 100, rating: 4.3, amenities: ['Pool', 'Restaurant', 'Garden'] },
+      ],
+      travelTips: ['Visit the Valley of the Kings early morning', 'Take a hot air balloon ride over the Valley of the Kings', 'Explore Karnak Temple at night with sound and light show'],
+      weather: { temperature: '25°C avg', condition: 'Arid desert', humidity: '45%' },
+    },
+    {
+      name: 'Alexandria', isCapital: false, isPopular: false, isPremium: true,
+      description: 'The Mediterranean pearl, founded by Alexander the Great, where Greco-Roman ruins, a legendary library, and seaside cafés create a unique Egyptian coastal experience.',
+      coordinates: { lat: 31.2001, lng: 29.9187 },
+      estimatedBudget: { min: 300, max: 1200, currency: 'EGP' },
+      bestTimeToVisit: 'March-May & September-November',
+      attractions: [
+        { name: 'Bibliotheca Alexandrina', description: 'Modern tribute to the ancient Library of Alexandria', rating: 4.6, category: 'museum' },
+        { name: 'Qaitbay Citadel', description: '15th-century fortress on the ancient lighthouse site', rating: 4.4, category: 'landmark' },
+        { name: 'Catacombs of Kom El Shoqafa', description: 'Roman-era underground tombs', rating: 4.3, category: 'museum' },
+        { name: 'Montaza Palace', description: 'Royal palace with beautiful gardens', rating: 4.3, category: 'landmark' },
+      ],
+      restaurants: [
+        { name: 'Fish Market', cuisine: 'Seafood', priceRange: '$$$', rating: 4.4 },
+        { name: 'Farag', cuisine: 'Egyptian', priceRange: '$$', rating: 4.3 },
+      ],
+      hotels: [
+        { name: 'Four Seasons Alexandria', type: 'luxury', pricePerNight: 250, rating: 4.6, amenities: ['Spa', 'Pool', 'Sea View'] },
+        { name: 'Steigenberger Cecil', type: 'mid-range', pricePerNight: 70, rating: 4.2, amenities: ['Free WiFi', 'Restaurant', 'Sea View'] },
+      ],
+      travelTips: ['Try fresh seafood at the Fish Market', 'Walk the Corniche for beautiful Mediterranean views', 'Visit the new Bibliotheca for incredible architecture'],
+      weather: { temperature: '21°C avg', condition: 'Mediterranean', humidity: '70%' },
+    },
+  ],
+};
+
+const seedAllData = async () => {
+  try {
+    await mongoose.connect(MONGO_URI);
+    console.log('MongoDB connected');
+
+    // Clear existing data
+    await Country.deleteMany({});
+    await City.deleteMany({});
+    console.log('Cleared existing countries and cities');
+
+    // Seed countries
+    const countryDocs = await Country.insertMany(countries);
+    console.log(`✅ Seeded ${countryDocs.length} countries`);
+
+    // Seed cities
+    let totalCities = 0;
+    for (const countryDoc of countryDocs) {
+      const cityData = citiesByCountry[countryDoc.name];
+      if (cityData) {
+        const citiesWithRef = cityData.map((city) => ({
+          ...city,
+          country: countryDoc._id,
+          slug: city.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+        }));
+        await City.insertMany(citiesWithRef);
+        totalCities += citiesWithRef.length;
+        console.log(`  Added ${citiesWithRef.length} cities for ${countryDoc.name}`);
+      }
+    }
+    console.log(`✅ Seeded ${totalCities} cities total`);
+
+    // Update Country stats with city counts
+    for (const countryDoc of countryDocs) {
+      const count = await City.countDocuments({ country: countryDoc._id });
+      await Country.findByIdAndUpdate(countryDoc._id, {
+        'stats.cityCount': count,
+      });
+    }
+
+    // Update existing Destinations to link to countries
+    let updatedDestinations = 0;
+    for (const countryDoc of countryDocs) {
+      const result = await Destination.updateMany(
+        { country: countryDoc.name },
+        { $set: { countryRef: countryDoc._id } }
+      );
+      if (result.modifiedCount > 0) {
+        updatedDestinations += result.modifiedCount;
+        console.log(`  Linked ${result.modifiedCount} existing destinations to ${countryDoc.name}`);
+      }
+    }
+    console.log(`✅ Updated ${updatedDestinations} existing destinations with country references`);
+
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📊 SEED SUMMARY');
+    console.log(`Countries: ${countryDocs.length}`);
+    console.log(`Cities: ${totalCities}`);
+    console.log(`Destinations linked: ${updatedDestinations}`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error seeding data:', error.message);
+    process.exit(1);
+  }
+};
+
+seedAllData();
