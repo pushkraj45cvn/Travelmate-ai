@@ -156,7 +156,7 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   try {
     await connectDB();
-    await seedDevUsers();
+    // await seedDevUsers();
 
     // Test SMTP connection asynchronously — don't block server start
     const { testConnection } = require('./config/nodemailer');
