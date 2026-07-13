@@ -71,7 +71,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center justify-between p-6">
-        <Link to="/dashboard" className="flex items-center gap-3">
+        <Link to="/" className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-500 rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-primary-500/25">
             ✈️
           </div>
