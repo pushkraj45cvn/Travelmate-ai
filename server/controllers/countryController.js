@@ -6,19 +6,23 @@ const { paginate } = require('../utils/helpers');
 
 // @desc    Get all countries (grouped by continent)
 // @route   GET /api/countries
-// @access  Public
+// @access  Pro/Team only
 exports.getCountries = asyncHandler(async (req, res, next) => {
   const userPlan = req.user?.plan || 'free';
+
+  // Block free users
+  if (userPlan === 'free') {
+    return res.status(200).json({
+      success: true,
+      count: 0,
+      data: [],
+    });
+  }
 
   // Build filter
   const filter = {};
   if (req.query.continent) filter.continent = req.query.continent;
   if (req.query.isPopular === 'true') filter.isPopular = true;
-
-  // Plan-based filtering
-  if (userPlan === 'free') {
-    filter.isPremium = { $ne: true };
-  }
 
   const countries = await Country.find(filter)
     .sort(req.query.sort || '-isPopular name')
@@ -55,9 +59,14 @@ exports.getCountries = asyncHandler(async (req, res, next) => {
 
 // @desc    Get single country by slug or ID
 // @route   GET /api/countries/:slug
-// @access  Public
+// @access  Pro/Team only
 exports.getCountry = asyncHandler(async (req, res, next) => {
   const userPlan = req.user?.plan || 'free';
+
+  // Block free users
+  if (userPlan === 'free') {
+    return next(new ErrorResponse('Upgrade to Pro or Team plan to explore destinations', 403));
+  }
 
   // Find by slug or ID
   const query = req.params.slug.match(/^[0-9a-fA-F]{24}$/)
@@ -100,12 +109,14 @@ exports.getCountry = asyncHandler(async (req, res, next) => {
 
 // @desc    Get continents summary
 // @route   GET /api/continents
-// @access  Public
+// @access  Pro/Team only
 exports.getContinents = asyncHandler(async (req, res, next) => {
   const userPlan = req.user?.plan || 'free';
 
-  const filter = {};
-  if (userPlan === 'free') filter.isPremium = { $ne: true };
+  // Block free users
+  if (userPlan === 'free') {
+    return res.status(200).json({ success: true, data: [] });
+  }
 
   const continents = await Country.aggregate([
     { $match: filter },

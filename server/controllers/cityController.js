@@ -9,10 +9,23 @@ const { paginate } = require('../utils/helpers');
 
 // @desc    Get all cities
 // @route   GET /api/cities
-// @access  Public
+// @access  Pro/Team only
 exports.getCities = asyncHandler(async (req, res, next) => {
-  const { skip, limit, page } = paginate(req.query.page, req.query.limit);
   const userPlan = req.user?.plan || 'free';
+
+  // Block free users from accessing cities
+  if (userPlan === 'free') {
+    return res.status(200).json({
+      success: true,
+      count: 0,
+      total: 0,
+      pages: 0,
+      page: 1,
+      data: [],
+    });
+  }
+
+  const { skip, limit, page } = paginate(req.query.page, req.query.limit);
 
   const filter = {};
   if (req.query.country) filter.country = req.query.country;
@@ -22,11 +35,6 @@ exports.getCities = asyncHandler(async (req, res, next) => {
   // Text search
   if (req.query.search) {
     filter.name = { $regex: req.query.search, $options: 'i' };
-  }
-
-  // Plan filtering
-  if (userPlan === 'free') {
-    filter.isPremium = { $ne: true };
   }
 
   const cities = await City.find(filter)
@@ -49,9 +57,14 @@ exports.getCities = asyncHandler(async (req, res, next) => {
 
 // @desc    Get single city by slug or ID
 // @route   GET /api/cities/:slug
-// @access  Public
+// @access  Pro/Team only
 exports.getCity = asyncHandler(async (req, res, next) => {
   const userPlan = req.user?.plan || 'free';
+
+  // Block free users
+  if (userPlan === 'free') {
+    return next(new ErrorResponse('Upgrade to Pro or Team plan to explore destinations', 403));
+  }
 
   const query = req.params.slug.match(/^[0-9a-fA-F]{24}$/)
     ? { _id: req.params.slug }
