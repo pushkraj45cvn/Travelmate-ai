@@ -98,19 +98,18 @@ const Destinations = () => {
       ) : isFreePlan ? (
         /* Free users see upgrade prompt instead of cities */
         <div className="card p-16 text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary-400 to-accent-500 flex items-center justify-center shadow-lg">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary-400 to-accent-500 flex items-center justify-center">
             <FiLock className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-2xl font-bold mb-3">Destinations are Pro Feature</h2>
+          <h2 className="text-2xl font-bold mb-3">Destinations is Pro Feature</h2>
           <p className="text-dark-500 dark:text-dark-400 max-w-md mx-auto mb-6">
-            Explore <strong>108+ cities</strong> across <strong>48 countries</strong> worldwide with detailed guides,
-            hotels, restaurants, and travel tips. Upgrade to <strong>Pro</strong> or <strong>Team</strong> to unlock all destinations.
+            Explore 108+ cities across 48 countries worldwide with detailed guides, hotels, restaurants, and travel tips. Upgrade to <strong>Pro</strong> or <strong>Team</strong> to unlock all destinations.
           </p>
           <Link
             to="/settings?tab=plan"
-            className="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-accent-500 text-white font-semibold hover:shadow-lg hover:shadow-primary-500/25 transition-all"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-accent-600 text-white font-semibold hover:opacity-90 transition-all"
           >
-            <FiStar className="w-5 h-5" />
+            <FiStar className="w-4 h-4" />
             View Plans
           </Link>
           <p className="text-xs text-dark-400 mt-4">
