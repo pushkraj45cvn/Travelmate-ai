@@ -35,7 +35,7 @@ const Destinations = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const params = search ? `?search=${search}` : '';
+        const params = search ? `?search=${search}&limit=100` : '?limit=100';
         const [cityRes, wishRes] = await Promise.allSettled([
           api.get(`/cities${params}`),
           api.get('/destinations/wishlist/me'),
