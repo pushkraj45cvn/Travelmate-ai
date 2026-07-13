@@ -1,16 +1,24 @@
 const express = require('express');
 const http = require('http');
+const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
+
+// Load .env file — gracefully handles missing file (e.g., on Render)
+const envPath = path.join(__dirname, '.env');
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+  console.log('Loaded environment from server/.env'.gray);
+} else {
+  // On Render (or any platform without .env), env vars come from the platform
+  console.log('No .env file found — using platform environment variables'.gray);
+}
 const cors = require('cors');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const rateLimit = require('express-rate-limit');
 const swaggerUi = require('swagger-ui-express');
 const colors = require('colors');
-
-// Load env vars
-dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Connect to database
 const connectDB = require('./config/db');
@@ -146,18 +154,49 @@ configureCloudinary();
 // Connect to database and start server
 const PORT = process.env.PORT || 5000;
 
-connectDB().then(async () => {
-  await seedDevUsers();
-  server.listen(PORT, () => {
-    console.log(`TravelMate AI Server running on port ${PORT}`.yellow.bold);
-    console.log(`API Docs: http://localhost:${PORT}/api-docs`.blue);
-  });
-});
+const startServer = async () => {
+  try {
+    await connectDB();
+    await seedDevUsers();
+
+    // Test SMTP connection asynchronously — don't block server start
+    const { testConnection } = require('./config/nodemailer');
+    testConnection().catch(() => {});
+
+    server.listen(PORT, () => {
+      console.log(`TravelMate AI Server running on port ${PORT}`.yellow.bold);
+      console.log(`API Docs: http://localhost:${PORT}/api-docs`.blue);
+    });
+  } catch (error) {
+    console.error('\n=== Failed to start server ==='.red.bold);
+    console.error(`Error: ${error.message}`.red);
+    console.error('The server cannot start without a database connection.'.red);
+    console.error('Please fix the MongoDB connection and restart.\n'.red);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
+  console.log('\n=== Unhandled Promise Rejection ==='.red.bold);
   console.log(`Error: ${err.message}`.red);
+  if (err.stack) {
+    console.log(`Stack: ${err.stack.split('\n').slice(0, 6).join('\n')}`.gray);
+  }
+  // Don't crash immediately — give the server a chance to finish pending requests
   server.close(() => process.exit(1));
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.log('\n=== Uncaught Exception ==='.red.bold);
+  console.log(`Error: ${err.message}`.red);
+  if (err.stack) {
+    console.log(`Stack: ${err.stack.split('\n').slice(0, 6).join('\n')}`.gray);
+  }
+  process.exit(1);
 });
 
 module.exports = { app, server };
