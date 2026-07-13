@@ -1,22 +1,55 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiLock, FiEye, FiEyeOff, FiTrash2 } from 'react-icons/fi';
-import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { FiLock, FiEye, FiEyeOff, FiTrash2, FiStar, FiCheck } from 'react-icons/fi';
+import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import authService from '../services/authService';
 import userService from '../services/userService';
 import { logout } from '../redux/slices/authSlice';
 import { useTheme } from '../contexts/ThemeContext';
 import { toast } from 'react-toastify';
 
+const plans = [
+  {
+    id: 'free',
+    name: 'Free',
+    price: '$0',
+    period: 'forever',
+    color: 'from-gray-400 to-gray-500',
+    features: ['Basic trip planning', 'Personal itineraries', 'Expense tracking'],
+  },
+  {
+    id: 'pro',
+    name: 'Pro',
+    price: '$9',
+    period: '/month',
+    color: 'from-primary-500 to-accent-500',
+    popular: true,
+    features: ['Everything in Free', 'Destination guides & wishlists', 'Trip invitations & collaboration', 'AI travel assistant', 'Priority support'],
+  },
+  {
+    id: 'team',
+    name: 'Team',
+    price: '$19',
+    period: '/month',
+    color: 'from-accent-500 to-pink-500',
+    features: ['Everything in Pro', 'Unlimited collaborators', 'Team dashboards', 'Admin controls', 'Advanced analytics'],
+  },
+];
+
 const Settings = () => {
+  const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { isDarkMode, toggleTheme } = useTheme();
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '' });
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const activeTab = searchParams.get('tab') || 'general';
+  const currentPlan = user?.plan || 'free';
 
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
@@ -42,9 +75,94 @@ const Settings = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-3xl mx-auto">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-3xl font-bold mb-8">Settings</h1>
+        <h1 className="text-3xl font-bold mb-6">Settings</h1>
+
+        {/* Tab Navigation */}
+        <div className="flex gap-4 mb-8 border-b border-dark-200 dark:border-dark-700 pb-2">
+          <button
+            onClick={() => navigate('/settings?tab=general')}
+            className={`pb-2 px-1 text-sm font-medium transition-colors ${activeTab === 'general' ? 'text-primary-500 border-b-2 border-primary-500' : 'text-dark-500 hover:text-dark-900 dark:hover:text-dark-100'}`}
+          >
+            General
+          </button>
+          <button
+            onClick={() => navigate('/settings?tab=plan')}
+            className={`pb-2 px-1 text-sm font-medium transition-colors ${activeTab === 'plan' ? 'text-primary-500 border-b-2 border-primary-500' : 'text-dark-500 hover:text-dark-900 dark:hover:text-dark-100'}`}
+          >
+            Plan & Billing
+          </button>
+        </div>
+
+        {activeTab === 'plan' ? (
+          /* === Plan & Billing Tab === */
+          <div>
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold mb-2">Choose Your Plan</h2>
+              <p className="text-dark-500 dark:text-dark-400">Unlock more features as you grow</p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {plans.map((plan) => {
+                const isCurrent = currentPlan === plan.id;
+                return (
+                  <div
+                    key={plan.id}
+                    className={`card p-6 relative ${isCurrent ? 'ring-2 ring-primary-500' : ''} ${plan.popular ? 'scale-105 md:scale-105' : ''}`}
+                  >
+                    {plan.popular && (
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-primary-500 to-accent-500 text-white shadow-lg">
+                        Most Popular
+                      </span>
+                    )}
+                    {isCurrent && (
+                      <span className="absolute top-4 right-4 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                        Current
+                      </span>
+                    )}
+
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${plan.color} flex items-center justify-center mb-4`}>
+                      <FiStar className="w-5 h-5 text-white" />
+                    </div>
+
+                    <h3 className="text-xl font-bold mb-1">{plan.name}</h3>
+                    <div className="mb-4">
+                      <span className="text-3xl font-black">{plan.price}</span>
+                      <span className="text-sm text-dark-400">{plan.period}</span>
+                    </div>
+
+                    <ul className="space-y-2 mb-6">
+                      {plan.features.map((f, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-dark-600 dark:text-dark-300">
+                          <FiCheck className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+
+                    {!isCurrent && (
+                      <button
+                        onClick={() => toast.info('Payment integration coming soon!')}
+                        className={`w-full py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r ${plan.color} hover:opacity-90 transition-all`}
+                      >
+                        {plan.id === 'free' ? 'Downgrade' : `Subscribe to ${plan.name}`}
+                      </button>
+                    )}
+                    {isCurrent && plan.id === 'free' && (
+                      <p className="text-center text-xs text-dark-400">Free plan — upgrade anytime</p>
+                    )}
+                    {isCurrent && plan.id !== 'free' && (
+                      <p className="text-center text-xs text-green-600 dark:text-green-400">Active plan</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          /* === General Tab === */
+          <>
 
         {/* Appearance */}
         <div className="card p-6 mb-6">
@@ -103,6 +221,8 @@ const Settings = () => {
             <FiTrash2 className="w-4 h-4" /> Delete Account
           </button>
         </div>
+        </>
+      )}
       </motion.div>
     </div>
   );
