@@ -5,9 +5,10 @@ const {
   getCountry,
   getContinents,
 } = require('../controllers/countryController');
+const { protect } = require('../middlewares/auth');
 
-router.get('/', getCountries);
-router.get('/continents', getContinents);
-router.get('/:slug', getCountry);
+router.get('/', protect, getCountries);
+router.get('/continents', protect, getContinents);
+router.get('/:slug', protect, getCountry);
 
 module.exports = router;

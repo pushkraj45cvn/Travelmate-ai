@@ -79,18 +79,8 @@ exports.getCountry = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Country not found', 404));
   }
 
-  // Check premium access
-  if (country.isPremium && userPlan === 'free') {
-    return next(
-      new ErrorResponse('Upgrade to Pro or Team plan to explore this country', 403)
-    );
-  }
-
   // Get cities in this country
-  const cityFilter = { country: country._id };
-  if (userPlan === 'free') cityFilter.isPremium = { $ne: true };
-
-  const cities = await City.find(cityFilter)
+  const cities = await City.find({ country: country._id })
     .sort('-isPopular name')
     .select('name slug description images coordinates isPremium isPopular isCapital estimatedBudget');
 
@@ -119,7 +109,6 @@ exports.getContinents = asyncHandler(async (req, res, next) => {
   }
 
   const continents = await Country.aggregate([
-    { $match: filter },
     {
       $group: {
         _id: '$continent',
