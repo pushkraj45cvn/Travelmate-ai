@@ -1,6 +1,11 @@
 const { body } = require('express-validator');
 
 exports.createExpenseValidator = [
+  body('title')
+    .optional()
+    .trim()
+    .isLength({ max: 200 })
+    .withMessage('Title cannot exceed 200 characters'),
   body('amount')
     .notEmpty()
     .withMessage('Amount is required')
@@ -12,8 +17,7 @@ exports.createExpenseValidator = [
     .isIn(['flights', 'hotels', 'food', 'shopping', 'fuel', 'transport', 'activities', 'miscellaneous'])
     .withMessage('Invalid category'),
   body('paidBy')
-    .notEmpty()
-    .withMessage('Paid by is required')
+    .optional()
     .isMongoId()
     .withMessage('Invalid user ID'),
   body('splitType')
