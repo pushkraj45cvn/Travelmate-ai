@@ -183,12 +183,13 @@ exports.getMyInvitations = asyncHandler(async (req, res, next) => {
     // Return invitations sent by the current user
     filter = { invitedBy: req.user.id };
   } else {
-    // Return invitations received by the current user
+    // Return invitations received by the current user (only pending)
     filter = {
       $or: [
         { invitedEmail: req.user.email },
         { invitedUser: req.user.id },
       ],
+      status: 'pending',
     };
   }
 
