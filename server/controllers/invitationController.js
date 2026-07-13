@@ -114,6 +114,14 @@ exports.respondToInvitation = asyncHandler(async (req, res, next) => {
           joinedAt: Date.now(),
         });
         await trip.save();
+
+        // Upgrade the accepting user to team plan so they see team features
+        const acceptingUser = await User.findById(req.user.id);
+        if (acceptingUser && acceptingUser.plan !== 'team') {
+          acceptingUser.plan = 'team';
+          acceptingUser.teamRole = acceptingUser.teamRole || 'member';
+          await acceptingUser.save({ validateBeforeSave: false });
+        }
       }
     }
   }
