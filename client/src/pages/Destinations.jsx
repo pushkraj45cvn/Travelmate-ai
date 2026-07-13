@@ -232,7 +232,7 @@ const CityCard = ({ city, idx, isFreePlan, getCountryName, getCountrySlug, getRa
       transition={{ delay: idx * 0.03 }}
     >
       {isLocked ? cardContent : (
-        <Link to={`/explore/${countrySlug}`} className="block">
+        <Link to={`/destinations/city/${city.slug || city._id}`} className="block">
           {cardContent}
         </Link>
       )}

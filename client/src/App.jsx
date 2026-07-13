@@ -31,6 +31,7 @@ const Destinations = lazy(() => import('./pages/Destinations'));
 const DestinationDetail = lazy(() => import('./pages/DestinationDetail'));
 const Explore = lazy(() => import('./pages/Explore'));
 const CountryPage = lazy(() => import('./pages/CountryPage'));
+const CityDetail = lazy(() => import('./pages/CityDetail'));
 const Wishlist = lazy(() => import('./pages/Wishlist'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Settings = lazy(() => import('./pages/Settings'));
@@ -99,6 +100,7 @@ const App = () => {
           <Route path="/destinations/:id" element={<DestinationDetail />} />
           <Route path="/explore" element={<Explore />} />
           <Route path="/explore/:slug" element={<CountryPage />} />
+          <Route path="/destinations/city/:slug" element={<CityDetail />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
