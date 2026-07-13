@@ -4,7 +4,9 @@ import { useSelector } from 'react-redux';
 
 const SocketContext = createContext();
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+// Derive socket URL from the API URL (both run on the same server)
+const apiUrl = import.meta.env.VITE_API_URL || '';
+const socketUrl = import.meta.env.VITE_SOCKET_URL || apiUrl.replace(/\/api\/?$/, '') || 'http://localhost:5000';
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
@@ -21,7 +23,7 @@ export const SocketProvider = ({ children }) => {
       return;
     }
 
-    const newSocket = io(SOCKET_URL, {
+    const newSocket = io(socketUrl, {
       auth: { token },
       transports: ['websocket', 'polling'],
     });
