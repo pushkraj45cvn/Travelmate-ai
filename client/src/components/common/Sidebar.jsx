@@ -53,11 +53,9 @@ const Sidebar = ({ isOpen, onClose }) => {
     { path: '/destinations', label: 'Destinations', icon: FiCompass, premium: true },
     { path: '/wishlist', label: 'Wishlist', icon: FiHeart, premium: true },
     { path: '/invitations', label: 'Invitations', icon: FiMail, premium: true },
-    ...(userPlan === 'team' ? [
-      { path: '/team', label: 'Team Dashboard', icon: FiUsers, premium: false },
-      { path: '/developer', label: 'API Access', icon: FiKey, premium: false },
-      { path: '/integrations', label: 'Integrations', icon: FiLink, premium: false },
-    ] : []),
+    { path: '/team', label: 'Team Dashboard', icon: FiUsers },
+    { path: '/developer', label: 'API Access', icon: FiKey },
+    { path: '/integrations', label: 'Integrations', icon: FiLink },
   ];
 
   const isActive = (path) => {
