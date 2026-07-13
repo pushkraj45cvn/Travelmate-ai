@@ -20,7 +20,7 @@ const swaggerUi = require('swagger-ui-express');
 const colors = require('colors');
 
 // Connect to database
-const { connectDB, testConnection } = require("./config/db");
+const connectDB = require("./config/db");
 const { configureCloudinary } = require('./config/cloudinary');
 const { seedDevUsers } = require('./utils/seedDevUsers');
 const swaggerSpec = require('./config/swagger');
