@@ -46,7 +46,7 @@ exports.getExpenses = asyncHandler(async (req, res, next) => {
 
   // Calculate totals by category
   const categoryTotals = await Expense.aggregate([
-    { $match: { trip: require('mongoose').Types.ObjectId(req.params.tripId) } },
+    { $match: { trip: new mongoose.Types.ObjectId(req.params.tripId) } },
     { $group: { _id: '$category', total: { $sum: '$amount' } } },
   ]);
 
