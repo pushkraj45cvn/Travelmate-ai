@@ -1,5 +1,6 @@
 const Expense = require('../models/Expense');
 const Trip = require('../models/Trip');
+const mongoose = require('mongoose');
 const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
 const { paginate } = require('../utils/helpers');
@@ -135,24 +136,24 @@ exports.getExpenseSummary = asyncHandler(async (req, res, next) => {
   const tripId = req.params.tripId;
 
   const totalExpenses = await Expense.aggregate([
-    { $match: { trip: require('mongoose').Types.ObjectId(tripId) } },
+    { $match: { trip: new mongoose.Types.ObjectId(tripId) } },
     { $group: { _id: null, total: { $sum: '$amount' } } },
   ]);
 
   const byCategory = await Expense.aggregate([
-    { $match: { trip: require('mongoose').Types.ObjectId(tripId) } },
+    { $match: { trip: new mongoose.Types.ObjectId(tripId) } },
     { $group: { _id: '$category', total: { $sum: '$amount' }, count: { $sum: 1 } } },
     { $sort: { total: -1 } },
   ]);
 
   const byUser = await Expense.aggregate([
-    { $match: { trip: require('mongoose').Types.ObjectId(tripId) } },
+    { $match: { trip: new mongoose.Types.ObjectId(tripId) } },
     { $group: { _id: '$paidBy', total: { $sum: '$amount' }, count: { $sum: 1 } } },
     { $sort: { total: -1 } },
   ]);
 
   const monthlyExpenses = await Expense.aggregate([
-    { $match: { trip: require('mongoose').Types.ObjectId(tripId) } },
+    { $match: { trip: new mongoose.Types.ObjectId(tripId) } },
     {
       $group: {
         _id: { $dateToString: { format: '%Y-%m', date: '$date' } },
