@@ -1,46 +1,88 @@
 const mongoose = require('mongoose');
 
 /**
- * Get the MongoDB URI from environment variables.
- * Validates it exists before connecting — prevents the confusing
- * "openUri() must be a string, got undefined" error.
+ * Get MongoDB URI from environment variables.
+ * Validates it exists before connecting.
  */
 const getMongoURI = () => {
   const uri = process.env.MONGODB_URI;
 
   if (!uri) {
-    console.error('\n=== MongoDB Configuration Error ==='.red.bold);
-    console.error('MONGODB_URI is not set!'.red.underline.bold);
-    console.error('\nTo fix this:'.yellow);
-    console.error('  • Locally:  Add MONGODB_URI to your server/.env file'.yellow);
-    console.error('  • Render:   Add MONGODB_URI in Render Dashboard → Environment Variables'.yellow);
-    console.error('\nExample:'.gray);
-    console.error('  mongodb+srv://user:pass@cluster.mongodb.net/db?retryWrites=true&w=majority\n'.gray);
+    console.error('\n=== MongoDB Configuration Error ===');
+    console.error('MONGODB_URI is not set!');
+
+    console.error('\nTo fix this:');
+    console.error('  • Locally: Add MONGODB_URI to server/.env');
+    console.error('  • Render: Add MONGODB_URI in Dashboard → Environment Variables');
+
     throw new Error('MONGODB_URI environment variable is not defined');
   }
 
   return uri;
 };
 
+
+/**
+ * Connect MongoDB Atlas
+ */
 const connectDB = async () => {
   try {
     const uri = getMongoURI();
-    const conn = await mongoose.connect(uri);
-    console.log(`MongoDB Connected: ${conn.connection.host}`.cyan.underline);
-    return conn;
-  } catch (error) {
-    if (!error.message.includes('MONGODB_URI environment variable')) {
-      console.error('\n=== MongoDB Connection Error ==='.red.bold);
-      console.error(`Message: ${error.message}`.red.underline.bold);
 
-      if (error.name === 'MongoServerError' && error.message.includes('bad auth')) {
-        console.error('\n💡 TIP: Check username/password in MONGODB_URI and Atlas Database Access'.yellow);
-      } else if (error.name === 'MongooseServerSelectionError') {
-        console.error('\n💡 TIP: Check IP whitelist in Atlas → Network Access'.yellow);
-      }
+    const conn = await mongoose.connect(uri);
+
+    console.log(
+      `MongoDB Connected: ${conn.connection.host}`
+    );
+
+    return conn;
+
+  } catch (error) {
+
+    console.error('\n=== MongoDB Connection Error ===');
+    console.error(`Message: ${error.message}`);
+
+    if (
+      error.name === 'MongoServerError' &&
+      error.message.includes('bad auth')
+    ) {
+      console.error(
+        'TIP: Check username/password in MONGODB_URI and Atlas Database Access'
+      );
     }
+
+    if (error.name === 'MongooseServerSelectionError') {
+      console.error(
+        'TIP: Check Atlas Network Access IP whitelist'
+      );
+    }
+
     throw error;
   }
 };
 
-module.exports = connectDB;
+
+/**
+ * Test MongoDB connection status
+ */
+const testConnection = async () => {
+  try {
+
+    if (mongoose.connection.readyState === 1) {
+      console.log("MongoDB test connection successful");
+      return true;
+    }
+
+    throw new Error("MongoDB is not connected");
+
+  } catch (error) {
+    console.error("MongoDB test failed:", error.message);
+    throw error;
+  }
+};
+
+
+module.exports = {
+  connectDB,
+  testConnection
+};

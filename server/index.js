@@ -8,9 +8,9 @@ const dotenv = require('dotenv');
 const envPath = path.join(__dirname, '.env');
 if (fs.existsSync(envPath)) {
   dotenv.config({ path: envPath });
-  console.log('Loaded environment from server/.env'.gray);
+  console.log('Loaded environment from server/.env')
 } else {
-  console.log('No .env file found — using platform environment variables'.gray);
+  console.log('No .env file found — using platform environment variables')
 }
 const cors = require('cors');
 const helmet = require('helmet');
@@ -20,7 +20,7 @@ const swaggerUi = require('swagger-ui-express');
 const colors = require('colors');
 
 // Connect to database
-const connectDB = require('./config/db');
+const { connectDB, testConnection } = require("./config/db");
 const { configureCloudinary } = require('./config/cloudinary');
 const { seedDevUsers } = require('./utils/seedDevUsers');
 const swaggerSpec = require('./config/swagger');
