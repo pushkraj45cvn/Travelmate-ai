@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { FiCheck, FiX } from 'react-icons/fi';
+import { FiCheck, FiX, FiLock, FiStar } from 'react-icons/fi';
 import api from '../services/api';
 import { formatDate } from '../utils/formatters';
 import { toast } from 'react-toastify';
 import EmptyState from '../components/common/EmptyState';
 
 const Invitations = () => {
+  const { user } = useSelector((state) => state.auth);
   const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const isFreePlan = user && user.plan === 'free';
 
   useEffect(() => { fetchInvitations(); }, []);
 
@@ -61,6 +65,23 @@ const Invitations = () => {
               </div>
             </motion.div>
           ))}
+        </div>
+      ) : isFreePlan ? (
+        <div className="card p-16 text-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary-400 to-accent-500 flex items-center justify-center">
+            <FiLock className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold mb-3">Subscribe to Connect</h2>
+          <p className="text-dark-500 dark:text-dark-400 max-w-md mx-auto mb-6">
+            Trip invitations and group collaboration are available on <strong>Pro</strong> and <strong>Team</strong> plans. Upgrade to travel together.
+          </p>
+          <Link
+            to="/settings?tab=plan"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-accent-600 text-white font-semibold hover:opacity-90 transition-all"
+          >
+            <FiStar className="w-4 h-4" />
+            View Plans
+          </Link>
         </div>
       ) : (
         <EmptyState icon="📨" title="No pending invitations" description="When someone invites you to a trip, it will appear here" />
