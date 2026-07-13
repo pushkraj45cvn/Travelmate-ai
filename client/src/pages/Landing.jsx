@@ -310,7 +310,7 @@ const Landing = () => {
                 popular: false,
               },
               {
-                name: 'Pro', price: '$800', period: '/month',
+                name: 'Pro', price: '$9', period: '/month',
                 tagline: 'Best for avid travelers',
                 accent: 'from-primary-500 to-accent-500',
                 btnStyle: 'bg-gradient-to-r from-primary-500 to-accent-500 text-white hover:shadow-lg hover:shadow-primary-500/25',
@@ -327,7 +327,7 @@ const Landing = () => {
                 popular: true,
               },
               {
-                name: 'Team', price: '$2500', period: '/month',
+                name: 'Team', price: '$19', period: '/month',
                 tagline: 'For groups & organizations',
                 accent: 'from-violet-500 to-purple-600',
                 btnStyle: 'bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:shadow-lg hover:shadow-violet-500/25',
