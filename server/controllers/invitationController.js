@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const Invitation = require('../models/Invitation');
 const Trip = require('../models/Trip');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 const asyncHandler = require('../utils/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
 const { sendEmail } = require('../config/nodemailer');
@@ -69,6 +70,23 @@ exports.sendInvitation = asyncHandler(async (req, res, next) => {
     console.error('Email send failed:', err);
   }
 
+  // Create in-app notification for the invited user
+  if (invitedUser) {
+    try {
+      await Notification.create({
+        recipient: invitedUser._id,
+        sender: req.user.id,
+        trip: trip._id,
+        type: 'invitation_received',
+        title: `Trip Invitation`,
+        message: `${req.user.name} invited you to join "${trip.title}"`,
+        actionUrl: '/invitations',
+      });
+    } catch (err) {
+      console.error('Notification creation failed:', err);
+    }
+  }
+
   res.status(201).json({
     success: true,
     data: invitation,
@@ -116,6 +134,37 @@ exports.respondToInvitation = asyncHandler(async (req, res, next) => {
         await trip.save();
       }
     }
+
+    // Notify the trip owner that invitation was accepted
+    try {
+      await Notification.create({
+        recipient: invitation.invitedBy,
+        sender: req.user.id,
+        trip: invitation.trip,
+        type: 'invitation_accepted',
+        title: 'Invitation Accepted',
+        message: `${req.user.name} accepted your invitation to join "${trip?.title || 'the trip'}"`,
+        actionUrl: `/trips/${invitation.trip}`,
+      });
+    } catch (err) {
+      console.error('Notification creation failed:', err);
+    }
+  } else if (status === 'declined') {
+    // Notify the trip owner that invitation was declined
+    try {
+      const trip = await Trip.findById(invitation.trip);
+      await Notification.create({
+        recipient: invitation.invitedBy,
+        sender: req.user.id,
+        trip: invitation.trip,
+        type: 'invitation_declined',
+        title: 'Invitation Declined',
+        message: `${req.user.name} declined your invitation to join "${trip?.title || 'the trip'}"`,
+        actionUrl: '/invitations',
+      });
+    } catch (err) {
+      console.error('Notification creation failed:', err);
+    }
   }
 
   res.status(200).json({
@@ -128,13 +177,22 @@ exports.respondToInvitation = asyncHandler(async (req, res, next) => {
 // @route   GET /api/invitations
 // @access  Private
 exports.getMyInvitations = asyncHandler(async (req, res, next) => {
-  const invitations = await Invitation.find({
-    $or: [
-      { invitedEmail: req.user.email },
-      { invitedUser: req.user.id },
-    ],
-    status: 'pending',
-  })
+  let filter;
+
+  if (req.query.sent === 'true') {
+    // Return invitations sent by the current user
+    filter = { invitedBy: req.user.id };
+  } else {
+    // Return invitations received by the current user
+    filter = {
+      $or: [
+        { invitedEmail: req.user.email },
+        { invitedUser: req.user.id },
+      ],
+    };
+  }
+
+  const invitations = await Invitation.find(filter)
     .populate('trip', 'title destination country startDate endDate coverImage')
     .populate('invitedBy', 'name email avatar')
     .sort('-createdAt');

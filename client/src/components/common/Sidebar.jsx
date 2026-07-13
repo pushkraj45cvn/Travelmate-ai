@@ -53,6 +53,9 @@ const Sidebar = ({ isOpen, onClose }) => {
     { path: '/destinations', label: 'Destinations', icon: FiCompass, premium: true },
     { path: '/wishlist', label: 'Wishlist', icon: FiHeart, premium: true },
     { path: '/invitations', label: 'Invitations', icon: FiMail, premium: true },
+    ...(userPlan === 'team' ? [
+      { path: '/team', label: 'Team Dashboard', icon: FiUsers },
+    ] : []),
   ];
 
   const isActive = (path) => {
