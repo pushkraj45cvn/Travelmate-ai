@@ -104,9 +104,5 @@ citySchema.index({ country: 1, name: 1 });
 citySchema.index({ slug: 1 });
 citySchema.index({ isPremium: 1 });
 citySchema.index({ isPopular: 1 });
-citySchema.index({ 'coordinates': '2dsphere' });
-
-// Create unique compound index: one city name per country
-citySchema.index({ name: 1, country: 1 }, { unique: true });
 
 module.exports = mongoose.model('City', citySchema);

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { FiSearch, FiHeart, FiLock, FiStar, FiCrown } from 'react-icons/fi';
+import { FiSearch, FiHeart, FiLock, FiStar, FiAward } from 'react-icons/fi';
 import api from '../services/api';
 
 const Destinations = () => {
@@ -76,7 +76,7 @@ const Destinations = () => {
                         <p className="text-sm text-dark-500 dark:text-dark-400">{dest.country}</p>
                       </div>
                       <span className="flex items-center gap-1 text-xs bg-gradient-to-r from-violet-500 to-purple-600 text-white px-2.5 py-0.5 rounded-full font-medium">
-                        <FiCrown className="w-3 h-3" /> Premium
+                        <FiAward className="w-3 h-3" /> Premium
                       </span>
                     </div>
                     <p className="text-sm text-dark-500 dark:text-dark-400 mt-3 line-clamp-2">{dest.description}</p>
@@ -85,7 +85,7 @@ const Destinations = () => {
                         to="/settings?tab=plan"
                         className="flex items-center justify-center gap-2 text-sm font-semibold text-violet-600 dark:text-violet-400 hover:underline"
                       >
-                        <FiCrown className="w-4 h-4" />
+                        <FiAward className="w-4 h-4" />
                         Upgrade to Unlock
                       </Link>
                     </div>
@@ -107,7 +107,7 @@ const Destinations = () => {
                         {dest.isPopular && <span className="badge-primary text-xs">Popular</span>}
                         {dest.isPremium && (
                           <span className="flex items-center gap-1 text-xs bg-gradient-to-r from-violet-500 to-purple-600 text-white px-2.5 py-0.5 rounded-full font-medium">
-                            <FiCrown className="w-3 h-3" /> Premium
+                            <FiAward className="w-3 h-3" /> Premium
                           </span>
                         )}
                         {wishlistIds.has(dest._id) && <span className="flex items-center gap-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full"><FiHeart className="w-3 h-3" /></span>}
@@ -134,7 +134,7 @@ const Destinations = () => {
 
       {isFreePlan && (
         <div className="card p-6 mt-8 text-center border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-900/10">
-          <FiCrown className="w-8 h-8 mx-auto mb-3 text-violet-500" />
+          <FiAward className="w-8 h-8 mx-auto mb-3 text-violet-500" />
           <h3 className="text-lg font-bold mb-1">Unlock Premium Destinations</h3>
           <p className="text-sm text-dark-500 dark:text-dark-400 mb-4">
             Upgrade to <strong>Pro</strong> or <strong>Team</strong> to access {destinations.filter(d => d.isPremium).length || 10}+ exclusive premium destinations with detailed guides, hotels, and restaurants.

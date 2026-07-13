@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { FiSearch, FiCrown, FiGlobe, FiLock, FiChevronRight, FiStar } from 'react-icons/fi';
+import { FiSearch, FiAward, FiGlobe, FiLock, FiChevronRight, FiStar } from 'react-icons/fi';
 import api from '../services/api';
 
 const continentEmojis = {
@@ -227,7 +227,7 @@ const Explore = () => {
       {/* Upgrade prompt for free users */}
       {isFreePlan && (
         <div className="card p-6 mt-8 text-center border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-900/10">
-          <FiCrown className="w-8 h-8 mx-auto mb-3 text-violet-500" />
+          <FiAward className="w-8 h-8 mx-auto mb-3 text-violet-500" />
           <h3 className="text-lg font-bold mb-1">Unlock Premium Countries</h3>
           <p className="text-sm text-dark-500 dark:text-dark-400 mb-4">
             Upgrade to <strong>Pro</strong> or <strong>Team</strong> to access premium countries
@@ -271,7 +271,7 @@ const CountryCard = ({ country, idx, isFreePlan }) => {
             {country.isPopular && <span className="badge-primary text-[10px]">Popular</span>}
             {country.isPremium && (
               <span className="flex items-center gap-0.5 text-[10px] bg-gradient-to-r from-violet-500 to-purple-600 text-white px-2 py-0.5 rounded-full font-medium">
-                <FiCrown className="w-2.5 h-2.5" /> Premium
+                <FiAward className="w-2.5 h-2.5" /> Premium
               </span>
             )}
           </div>
@@ -289,7 +289,7 @@ const CountryCard = ({ country, idx, isFreePlan }) => {
               to="/settings?tab=plan"
               className="flex items-center justify-center gap-1.5 text-xs font-semibold text-violet-600 dark:text-violet-400 hover:underline"
             >
-              <FiCrown className="w-3 h-3" />
+              <FiAward className="w-3 h-3" />
               Upgrade to Unlock
             </Link>
           </div>

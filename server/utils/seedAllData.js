@@ -1,4 +1,8 @@
 const mongoose = require('mongoose');
+const path = require('path');
+const dotenv = require('dotenv');
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
+
 const Country = require('../models/Country');
 const City = require('../models/City');
 const Destination = require('../models/Destination');
@@ -1629,8 +1633,14 @@ const seedAllData = async () => {
     await City.deleteMany({});
     console.log('Cleared existing countries and cities');
 
+    // Pre-process slugs
+    const countriesWithSlugs = countries.map(c => ({
+      ...c,
+      slug: c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+    }));
+
     // Seed countries
-    const countryDocs = await Country.insertMany(countries);
+    const countryDocs = await Country.insertMany(countriesWithSlugs);
     console.log(`✅ Seeded ${countryDocs.length} countries`);
 
     // Seed cities

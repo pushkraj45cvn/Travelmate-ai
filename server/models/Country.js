@@ -102,6 +102,5 @@ countrySchema.pre('save', function (next) {
 countrySchema.index({ continent: 1, name: 1 });
 countrySchema.index({ isPremium: 1 });
 countrySchema.index({ isPopular: 1 });
-countrySchema.index({ slug: 1 });
 
 module.exports = mongoose.model('Country', countrySchema);

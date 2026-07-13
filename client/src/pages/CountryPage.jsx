@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { FiArrowLeft, FiMapPin, FiCrown, FiLock, FiStar, FiClock, FiDollarSign, FiGlobe, FiShield, FiInfo } from 'react-icons/fi';
+import { FiArrowLeft, FiMapPin, FiAward, FiLock, FiStar, FiClock, FiDollarSign, FiGlobe, FiShield, FiInfo } from 'react-icons/fi';
 import api from '../services/api';
 
 const continentEmojis = {
@@ -75,7 +75,7 @@ const CountryPage = () => {
             to="/settings?tab=plan"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-semibold hover:shadow-lg hover:shadow-violet-500/25 transition-all"
           >
-            <FiCrown className="w-4 h-4" />
+            <FiAward className="w-4 h-4" />
             Upgrade to Unlock
           </Link>
         </div>
@@ -122,7 +122,7 @@ const CountryPage = () => {
             <div className="flex gap-2 mt-2">
               {country.isPremium && (
                 <span className="flex items-center gap-1 text-xs bg-gradient-to-r from-violet-500 to-purple-600 text-white px-3 py-1 rounded-full font-medium shadow-lg">
-                  <FiCrown className="w-3 h-3" /> Premium
+                  <FiAward className="w-3 h-3" /> Premium
                 </span>
               )}
               {country.isPopular && (
@@ -179,7 +179,7 @@ const CountryPage = () => {
                             </h3>
                             {city.isPremium && (
                               <span className="flex items-center gap-0.5 text-[10px] bg-gradient-to-r from-violet-500 to-purple-600 text-white px-2 py-0.5 rounded-full font-medium">
-                                <FiCrown className="w-2.5 h-2.5" /> Premium
+                                <FiAward className="w-2.5 h-2.5" /> Premium
                               </span>
                             )}
                           </div>
@@ -201,7 +201,7 @@ const CountryPage = () => {
                               to="/settings?tab=plan"
                               className="flex items-center justify-center gap-1 text-xs font-semibold text-violet-600 dark:text-violet-400 hover:underline"
                             >
-                              <FiCrown className="w-3 h-3" />
+                              <FiAward className="w-3 h-3" />
                               Upgrade to Explore
                             </Link>
                           </div>

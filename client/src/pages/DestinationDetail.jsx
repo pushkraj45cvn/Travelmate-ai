@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { FiArrowLeft, FiHeart, FiMapPin, FiStar, FiPlusCircle, FiLock, FiCrown } from 'react-icons/fi';
+import { FiArrowLeft, FiHeart, FiMapPin, FiStar, FiPlusCircle, FiLock, FiAward } from 'react-icons/fi';
 import api from '../services/api';
 import { toast } from 'react-toastify';
 
@@ -80,7 +80,7 @@ const DestinationDetail = () => {
             to="/settings?tab=plan"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-semibold hover:shadow-lg hover:shadow-violet-500/25 transition-all"
           >
-            <FiCrown className="w-4 h-4" />
+            <FiAward className="w-4 h-4" />
             Upgrade to Unlock
           </Link>
         </div>
@@ -102,7 +102,7 @@ const DestinationDetail = () => {
           <div className="absolute top-4 right-4 flex gap-2">
             {destination.isPremium && (
               <span className="flex items-center gap-1 text-xs bg-gradient-to-r from-violet-500 to-purple-600 text-white px-3 py-1 rounded-full font-medium shadow-lg">
-                <FiCrown className="w-3.5 h-3.5" /> Premium
+                <FiAward className="w-3.5 h-3.5" /> Premium
               </span>
             )}
             {destination.isPopular && (
