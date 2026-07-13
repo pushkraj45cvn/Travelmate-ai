@@ -60,9 +60,29 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(helmet());
 
 // Enable CORS
+const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map(s => s.trim().replace(/\/$/, ''));
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: function (origin, callback) {
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin) return callback(null, true);
+      // Allow if origin is in the allowed list
+      const cleaned = origin.replace(/\/$/, '');
+      if (allowedOrigins.some(o => cleaned === o)) {
+        return callback(null, true);
+      }
+      // Also allow any localhost during development
+      if (process.env.NODE_ENV !== 'production' && origin.includes('localhost')) {
+        return callback(null, true);
+      }
+      callback(null, true); // In production, still allow but log a warning
+      if (process.env.NODE_ENV === 'production') {
+        console.warn(`CORS: Unexpected origin "${origin}" — request allowed but check CLIENT_URL`.yellow);
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],

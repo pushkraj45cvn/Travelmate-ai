@@ -7,9 +7,23 @@ const Notification = require('../models/Notification');
 let io;
 
 const initializeSocket = (server) => {
+  const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+    .split(',')
+    .map(s => s.trim().replace(/\/$/, ''));
+
   io = new Server(server, {
     cors: {
-      origin: process.env.CLIENT_URL || 'http://localhost:5173',
+      origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        const cleaned = origin.replace(/\/$/, '');
+        if (allowedOrigins.some(o => cleaned === o)) {
+          return callback(null, true);
+        }
+        if (process.env.NODE_ENV !== 'production' && origin.includes('localhost')) {
+          return callback(null, true);
+        }
+        callback(null, true);
+      },
       methods: ['GET', 'POST'],
       credentials: true,
     },
