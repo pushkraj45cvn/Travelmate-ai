@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
-import { FiTrash2, FiHeart } from 'react-icons/fi';
+import { FiTrash2, FiHeart, FiLock, FiStar } from 'react-icons/fi';
 import api from '../services/api';
 import { toast } from 'react-toastify';
 import EmptyState from '../components/common/EmptyState';
 
 const Wishlist = () => {
+  const { user } = useSelector((state) => state.auth);
   const [wishlist, setWishlist] = useState({ destinations: [] });
   const [loading, setLoading] = useState(true);
+
+  const isFreePlan = user && user.plan === 'free';
 
   useEffect(() => { fetchWishlist(); }, []);
 
@@ -34,7 +38,24 @@ const Wishlist = () => {
       <h1 className="text-3xl font-bold mb-2">My Wishlist</h1>
       <p className="text-dark-500 dark:text-dark-400 mb-8">Destinations you want to visit</p>
 
-      {destinations.length > 0 ? (
+      {isFreePlan ? (
+        <div className="card p-16 text-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary-400 to-accent-500 flex items-center justify-center">
+            <FiLock className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold mb-3">Wishlist is Pro Feature</h2>
+          <p className="text-dark-500 dark:text-dark-400 max-w-md mx-auto mb-6">
+            Save and organize your dream destinations. Upgrade to <strong>Pro</strong> or <strong>Team</strong> to unlock your personal wishlist.
+          </p>
+          <Link
+            to="/settings?tab=plan"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-accent-600 text-white font-semibold hover:opacity-90 transition-all"
+          >
+            <FiStar className="w-4 h-4" />
+            View Plans
+          </Link>
+        </div>
+      ) : destinations.length > 0 ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {destinations.map((item, idx) => {
             const dest = item.destination;
