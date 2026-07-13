@@ -95,9 +95,31 @@ const Destinations = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1,2,3,4,5,6].map(i => <div key={i} className="skeleton h-72 rounded-2xl" />)}
         </div>
+      ) : isFreePlan ? (
+        /* Free users see upgrade prompt instead of cities */
+        <div className="card p-16 text-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary-400 to-accent-500 flex items-center justify-center shadow-lg">
+            <FiLock className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold mb-3">Destinations are Pro Feature</h2>
+          <p className="text-dark-500 dark:text-dark-400 max-w-md mx-auto mb-6">
+            Explore <strong>108+ cities</strong> across <strong>48 countries</strong> worldwide with detailed guides,
+            hotels, restaurants, and travel tips. Upgrade to <strong>Pro</strong> or <strong>Team</strong> to unlock all destinations.
+          </p>
+          <Link
+            to="/settings?tab=plan"
+            className="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-gradient-to-r from-primary-500 to-accent-500 text-white font-semibold hover:shadow-lg hover:shadow-primary-500/25 transition-all"
+          >
+            <FiStar className="w-5 h-5" />
+            View Plans
+          </Link>
+          <p className="text-xs text-dark-400 mt-4">
+            Already a subscriber? <Link to="/auth/login" className="text-primary-500 hover:underline">Sign in</Link>
+          </p>
+        </div>
       ) : cities.length > 0 ? (
         <div>
-          {/* Free Cities */}
+          {/* All Cities for subscribed users */}
           {freeCities.length > 0 && (
             <div className="mb-10">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -113,8 +135,8 @@ const Destinations = () => {
             </div>
           )}
 
-          {/* Premium Cities for subscribed users */}
-          {premiumCities.length > 0 && !isFreePlan && (
+          {/* Premium Cities */}
+          {premiumCities.length > 0 && (
             <div>
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <FiAward className="w-5 h-5 text-violet-500" /> Premium Destinations
@@ -126,25 +148,6 @@ const Destinations = () => {
                     getCountryName={getCountryName} getCountrySlug={getCountrySlug} getRating={getRating} />
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Premium locked banner for free users */}
-          {premiumCities.length > 0 && isFreePlan && (
-            <div className="card p-10 text-center border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-900/10">
-              <FiAward className="w-10 h-10 mx-auto mb-3 text-violet-500" />
-              <h3 className="text-xl font-bold mb-2">{premiumCities.length} Premium Cities Available</h3>
-              <p className="text-sm text-dark-500 dark:text-dark-400 max-w-md mx-auto mb-5">
-                Upgrade to <strong>Pro</strong> or <strong>Team</strong> to unlock premium cities
-                with detailed guides, hotels, restaurants, and expert travel tips.
-              </p>
-              <Link
-                to="/settings?tab=plan"
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-semibold hover:opacity-90 transition-all"
-              >
-                <FiStar className="w-4 h-4" />
-                View Plans
-              </Link>
             </div>
           )}
         </div>
