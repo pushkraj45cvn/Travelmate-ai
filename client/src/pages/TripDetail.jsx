@@ -298,29 +298,54 @@ const TripDetail = () => {
 
         {/* Expense Summary */}
         <Card>
-          <h2 className="text-lg font-semibold mb-4">Expense Summary</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Expense Summary</h2>
+            <Link to={`/trips/${id}/expenses`} className="text-sm text-primary-500 hover:text-primary-600">Manage All</Link>
+          </div>
           {expenseSummary ? (
-            <div className="flex items-center gap-6">
-              <div className="w-32 h-32 flex-shrink-0">
-                <Doughnut data={expenseData} options={{ cutout: '65%', plugins: { legend: { display: false } } }} />
+            <>
+              <div className="flex items-center gap-6 mb-4">
+                <div className="w-32 h-32 flex-shrink-0">
+                  <Doughnut data={expenseData} options={{ cutout: '65%', plugins: { legend: { display: false } } }} />
+                </div>
+                <div className="space-y-2 flex-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-dark-500">Spent</span>
+                    <span className="font-semibold text-red-500">{formatCurrency(expenseSummary.total)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-dark-500">Budget</span>
+                    <span className="font-semibold">{formatCurrency(expenseSummary.budget)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-dark-500">Remaining</span>
+                    <span className={`font-semibold ${expenseSummary.remaining >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {formatCurrency(expenseSummary.remaining)}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2 flex-1">
-                <div className="flex justify-between text-sm">
-                  <span className="text-dark-500">Spent</span>
-                  <span className="font-semibold text-red-500">{formatCurrency(expenseSummary.total)}</span>
+              {/* Recent Expenses List */}
+              {expenseSummary.recent?.length > 0 && (
+                <div className="border-t border-gray-100 dark:border-dark-700 pt-4">
+                  <p className="text-xs font-semibold text-dark-400 uppercase tracking-wide mb-3">Recent Expenses</p>
+                  <div className="space-y-2">
+                    {expenseSummary.recent.map((exp) => (
+                      <div key={exp._id} className="flex items-center justify-between py-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-primary-500" />
+                          <div>
+                            <p className="text-sm font-medium">{exp.title || exp.category}</p>
+                            <p className="text-xs text-dark-400">{exp.category} · {formatDate(exp.date)}</p>
+                          </div>
+                        </div>
+                        <span className="text-sm font-semibold text-red-500">-{formatCurrency(exp.amount)}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-dark-500">Budget</span>
-                  <span className="font-semibold">{formatCurrency(expenseSummary.budget)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-dark-500">Remaining</span>
-                  <span className={`font-semibold ${expenseSummary.remaining >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {formatCurrency(expenseSummary.remaining)}
-                  </span>
-                </div>
-              </div>
-            </div>
+              )}
+            </>
           ) : (
             <p className="text-dark-500 text-center py-6">No expenses yet</p>
           )}

@@ -162,6 +162,13 @@ exports.getExpenseSummary = asyncHandler(async (req, res, next) => {
     { $sort: { _id: 1 } },
   ]);
 
+  // Recent expenses for display on trip detail
+  const recent = await Expense.find({ trip: tripId })
+    .sort('-createdAt')
+    .limit(5)
+    .populate('paidBy', 'name')
+    .lean();
+
   const trip = await Trip.findById(tripId);
 
   res.status(200).json({
@@ -173,6 +180,7 @@ exports.getExpenseSummary = asyncHandler(async (req, res, next) => {
       byCategory,
       byUser,
       monthly: monthlyExpenses,
+      recent,
     },
   });
 });
