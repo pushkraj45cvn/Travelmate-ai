@@ -126,15 +126,21 @@ userSchema.pre('save', async function (next) {
 
 // Sign JWT
 userSchema.methods.signJwtToken = function () {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not configured. Add it to your Render Dashboard environment variables.');
+  }
   return jwt.sign({ id: this._id, role: this.role }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE,
+    expiresIn: process.env.JWT_EXPIRE || '7d',
   });
 };
 
 // Sign Refresh Token
 userSchema.methods.signRefreshToken = function () {
+  if (!process.env.JWT_REFRESH_SECRET) {
+    throw new Error('JWT_REFRESH_SECRET is not configured. Add it to your Render Dashboard environment variables.');
+  }
   return jwt.sign({ id: this._id }, process.env.JWT_REFRESH_SECRET, {
-    expiresIn: process.env.JWT_REFRESH_EXPIRE,
+    expiresIn: process.env.JWT_REFRESH_EXPIRE || '30d',
   });
 };
 

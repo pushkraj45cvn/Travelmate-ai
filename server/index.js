@@ -14,6 +14,15 @@ if (fs.existsSync(envPath)) {
 }
 const cors = require('cors');
 const helmet = require('helmet');
+
+// Validate required environment variables
+const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET', 'JWT_REFRESH_SECRET'];
+const missing = requiredEnvVars.filter(v => !process.env[v]);
+if (missing.length > 0) {
+  console.error(`\n⚠️  Missing environment variables: ${missing.join(', ')}`.yellow);
+  console.error('   Add them to your Render Dashboard → Environment\n'.yellow);
+}
+
 const mongoSanitize = require('express-mongo-sanitize');
 const rateLimit = require('express-rate-limit');
 const swaggerUi = require('swagger-ui-express');
