@@ -77,7 +77,14 @@ const Sidebar = ({ isOpen, onClose }) => {
           </div>
           <div>
             <h1 className="text-lg font-bold gradient-text">TravelMate</h1>
-            <p className="text-xs text-dark-500 dark:text-dark-400">AI Travel Planner</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-xs text-dark-500 dark:text-dark-400">AI Travel Planner</p>
+              {user?.plan && user.plan !== 'free' && (
+                <span className={`text-[9px] font-semibold px-1 py-0.5 rounded-full ${user.plan === 'pro' ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400' : 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400'}`}>
+                  {user.plan === 'pro' ? 'PRO' : 'TEAM'}
+                </span>
+              )}
+            </div>
           </div>
         </Link>
         <button

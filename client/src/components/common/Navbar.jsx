@@ -44,6 +44,11 @@ const Navbar = ({ onMenuClick, isAdmin }) => {
               Welcome back,
             </span>
             <span className="text-sm font-semibold gradient-text">{user?.name}</span>
+            {user?.plan && user.plan !== 'free' && (
+              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${user.plan === 'pro' ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400' : 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400'}`}>
+                {user.plan === 'pro' ? 'PRO' : 'TEAM'}
+              </span>
+            )}
           </div>
         </div>
 
