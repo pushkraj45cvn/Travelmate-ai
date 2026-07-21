@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useState, useEffect } from 'react';
-import { FiX, FiHome, FiMap, FiCompass, FiHeart, FiUsers, FiBell, FiMail, FiMenu, FiLock, FiCircle, FiKey, FiLink, FiCpu } from 'react-icons/fi';
+import { FiX, FiHome, FiMap, FiCompass, FiGlobe, FiHeart, FiUsers, FiBell, FiMail, FiMenu, FiLock, FiCircle, FiKey, FiLink, FiCpu } from 'react-icons/fi';
 import { MdOutlineFlight, MdOutlineDashboard, MdOutlineInventory2 } from 'react-icons/md';
 import { BsSuitcase2, BsCalendarCheck, BsImage } from 'react-icons/bs';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -50,6 +50,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { path: '/dashboard', label: 'Dashboard', icon: MdOutlineDashboard },
     { path: '/trips', label: 'My Trips', icon: BsSuitcase2 },
     { path: '/trips/new', label: 'New Trip', icon: MdOutlineFlight },
+    { path: '/explore', label: 'Explore', icon: FiGlobe },
     { path: '/destinations', label: 'Destinations', icon: FiCompass, premium: true },
     { path: '/wishlist', label: 'Wishlist', icon: FiHeart, premium: true },
     { path: '/invitations', label: 'Invitations', icon: FiMail, premium: true },

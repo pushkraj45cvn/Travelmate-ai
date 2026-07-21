@@ -27,6 +27,7 @@ const Packing = lazy(() => import('./pages/Packing'));
 const Chat = lazy(() => import('./pages/Chat'));
 const Gallery = lazy(() => import('./pages/Gallery'));
 const Documents = lazy(() => import('./pages/Documents'));
+const Explore = lazy(() => import('./pages/Explore'));
 const Destinations = lazy(() => import('./pages/Destinations'));
 const DestinationDetail = lazy(() => import('./pages/DestinationDetail'));
 const CityDetail = lazy(() => import('./pages/CityDetail'));
@@ -96,8 +97,8 @@ const App = () => {
           <Route path="/trips/:id/documents" element={<Documents />} />
           <Route path="/destinations" element={<Destinations />} />
           <Route path="/destinations/:id" element={<DestinationDetail />} />
-          <Route path="/explore" element={<Navigate to="/destinations" replace />} />
-          <Route path="/explore/:slug" element={<Navigate to="/destinations" replace />} />
+          <Route path="/explore" element={<Explore />} />
+          <Route path="/explore/:slug" element={<Explore />} />
           <Route path="/destinations/city/:slug" element={<CityDetail />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/profile" element={<Profile />} />
