@@ -49,8 +49,9 @@ const Chat = () => {
   const fetchChat = async () => {
     try {
       const chatData = await api.get(`/trips/${tripId}/chat`);
-      setChat(chatData.data.data);
-      const msgRes = await api.get(`/trips/${chatData.data.data._id}/messages?limit=50`);
+      const chat = chatData.data.data;
+      setChat(chat);
+      const msgRes = await api.get(`/trips/${tripId}/chat/${chat._id}/messages?limit=50`);
       setMessages(msgRes.data.data || []);
     } catch (err) {} finally { setLoading(false); }
   };
@@ -67,7 +68,7 @@ const Chat = () => {
     } else {
       // Fallback to REST
       try {
-        const res = await api.post(`/trips/${chat._id}/messages`, { content: newMessage });
+        const res = await api.post(`/trips/${tripId}/chat/${chat._id}/messages`, { content: newMessage });
         setMessages((prev) => [...prev, res.data.data]);
       } catch (err) {}
     }

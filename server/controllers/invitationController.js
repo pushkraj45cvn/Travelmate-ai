@@ -21,6 +21,12 @@ exports.sendInvitation = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Only the trip owner can send invitations', 403));
   }
 
+  // Check plan access — only Pro and Team plans can invite collaborators
+  const userPlan = req.user?.plan || 'free';
+  if (!['pro', 'team'].includes(userPlan)) {
+    return next(new ErrorResponse('Upgrade to Pro or Team plan to invite collaborators', 403));
+  }
+
   const { email, role } = req.body;
 
   // Check if user exists

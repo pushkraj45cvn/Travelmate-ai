@@ -3,7 +3,7 @@ import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-do
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { FiArrowLeft, FiUpload, FiPlus, FiX } from 'react-icons/fi';
-import { createTrip } from '../redux/slices/tripSlice';
+import { createTrip, resetTrips } from '../redux/slices/tripSlice';
 import { TRAVEL_TYPES, CURRENCIES } from '../utils/constants';
 import { toast } from 'react-toastify';
 import api from '../services/api';
@@ -36,6 +36,10 @@ const CreateTrip = () => {
     endDate: '',
     numberOfTravelers: 1,
   });
+
+  useEffect(() => {
+    dispatch(resetTrips());
+  }, [dispatch]);
 
   useEffect(() => {
     if (isProPlan) {
@@ -111,6 +115,8 @@ const CreateTrip = () => {
     if (result.meta.requestStatus === 'fulfilled') {
       toast.success('Trip created successfully!');
       navigate(`/trips/${result.payload._id}`);
+    } else if (result.meta.requestStatus === 'rejected') {
+      toast.error(result.payload || 'Failed to create trip. Please check all fields.');
     }
   };
 
