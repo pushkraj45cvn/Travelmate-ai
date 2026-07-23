@@ -101,10 +101,11 @@ app.use(
   })
 );
 
-// Rate limiting
+// Rate limiting — more permissive in development
+const isDev = process.env.NODE_ENV === 'development';
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX) || 100,
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || (isDev ? 60 * 1000 : 15 * 60 * 1000),
+  max: parseInt(process.env.RATE_LIMIT_MAX) || (isDev ? 500 : 100),
   message: {
     success: false,
     error: 'Too many requests, please try again later.',
@@ -191,7 +192,7 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   try {
     await connectDB();
-    // await seedDevUsers();
+    await seedDevUsers();
 
     // Test SMTP connection asynchronously — don't block server start
     try {

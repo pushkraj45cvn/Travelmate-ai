@@ -46,15 +46,29 @@ exports.subscribe = asyncHandler(async (req, res, next) => {
 
   // --- Update user's plan ---
   const plan = validPlans[planId];
-  const user = await User.findByIdAndUpdate(
+  const userDoc = await User.findByIdAndUpdate(
     req.user.id,
     { plan: planId },
     { new: true, runValidators: true }
   ).select('-password');
 
-  if (!user) {
+  if (!userDoc) {
     return next(new ErrorResponse('User not found', 404));
   }
+
+  const user = {
+    id: userDoc._id,
+    name: userDoc.name,
+    email: userDoc.email,
+    role: userDoc.role,
+    plan: userDoc.plan || 'free',
+    teamId: userDoc.teamId,
+    teamRole: userDoc.teamRole,
+    avatar: userDoc.avatar,
+    isVerified: userDoc.isVerified,
+    preferredCurrency: userDoc.preferredCurrency,
+    preferredLanguage: userDoc.preferredLanguage,
+  };
 
   res.status(200).json({
     success: true,
@@ -75,15 +89,29 @@ exports.subscribe = asyncHandler(async (req, res, next) => {
 // @route   POST /api/subscriptions/cancel
 // @access  Private
 exports.cancelSubscription = asyncHandler(async (req, res, next) => {
-  const user = await User.findByIdAndUpdate(
+  const userDoc = await User.findByIdAndUpdate(
     req.user.id,
     { plan: 'free' },
     { new: true, runValidators: true }
   ).select('-password');
 
-  if (!user) {
+  if (!userDoc) {
     return next(new ErrorResponse('User not found', 404));
   }
+
+  const user = {
+    id: userDoc._id,
+    name: userDoc.name,
+    email: userDoc.email,
+    role: userDoc.role,
+    plan: userDoc.plan || 'free',
+    teamId: userDoc.teamId,
+    teamRole: userDoc.teamRole,
+    avatar: userDoc.avatar,
+    isVerified: userDoc.isVerified,
+    preferredCurrency: userDoc.preferredCurrency,
+    preferredLanguage: userDoc.preferredLanguage,
+  };
 
   res.status(200).json({
     success: true,

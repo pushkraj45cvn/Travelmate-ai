@@ -37,7 +37,7 @@ const tripSchema = new mongoose.Schema(
     },
     currency: {
       type: String,
-      enum: ['USD', 'EUR', 'GBP', 'INR', 'JPY', 'AUD', 'CAD', 'CNY', 'BRL', 'MXN'],
+      enum: ['USD', 'EUR', 'GBP', 'INR', 'JPY', 'AUD', 'CAD', 'CNY', 'BRL', 'MXN', 'THB', 'KRW', 'SGD', 'HKD', 'NZD', 'CHF', 'SEK', 'NOK', 'DKK', 'ZAR'],
       default: 'USD',
     },
     travelType: {

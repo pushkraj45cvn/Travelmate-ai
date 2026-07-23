@@ -178,7 +178,8 @@ const TripDetail = () => {
     );
   }
 
-  const isOwner = trip.owner?._id === user?.id || trip.owner === user?.id;
+  const userId = user?.id || user?._id;
+  const isOwner = trip.owner?._id === userId || trip.owner === userId;
   const expenseData = {
     labels: expenseSummary?.byCategory?.map(c => c._id) || [],
     datasets: [{
@@ -435,7 +436,7 @@ const TripDetail = () => {
           ))}
         </div>
 
-        {isOwner && (
+        {isOwner && (user?.plan === 'pro' || user?.plan === 'team') && (
           <form onSubmit={sendInvitation} className="flex items-end gap-3 pt-3 border-t border-gray-200 dark:border-dark-700">
             <div className="flex-1">
               <label className="block text-xs font-medium mb-1 text-dark-500">Invite by email</label>
